@@ -1,0 +1,117 @@
+/* Drakonas extras on top of shared/style.css: hull bar, boss bar, banners, bomb button. */
+
+.dk-mute { pointer-events: auto; cursor: pointer; color: var(--text); font: inherit; font-size: 0.8rem; }
+.dk-mute--off { color: var(--muted); text-decoration: line-through; }
+.dk-low { color: #ff5a72; border-color: rgba(255, 90, 114, 0.6); }
+.dk-pop { animation: dk-pop 0.35s ease; }
+@keyframes dk-pop { 40% { transform: scale(1.25); } }
+
+.dk-hud {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 4;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 700 0.8rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.12em;
+}
+.dk-hull {
+  position: relative;
+  width: min(220px, 44vw);
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(10, 10, 16, 0.7);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.dk-hull__fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #22c55e, #a3e635);
+  box-shadow: 0 0 12px rgba(120, 255, 120, 0.5);
+  transition: width 0.2s ease;
+}
+.dk-hull__fill--low { background: linear-gradient(90deg, #ff2e4d, #ff8a3c); animation: dk-blink 0.6s steps(2) infinite; }
+.dk-hull--shield { border-color: #8a7bff; box-shadow: 0 0 14px rgba(138, 123, 255, 0.7); }
+.dk-hull__text { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; text-shadow: 0 1px 3px #000; font-size: 0.7rem; }
+.dk-combo { color: var(--accent-2); text-shadow: 0 2px 6px #000; font-size: 1rem; min-height: 1.2em; }
+.dk-combo--hot { color: #ff7a1a; text-shadow: 0 0 12px rgba(255, 122, 26, 0.8), 0 2px 6px #000; }
+.dk-combo--pop { animation: dk-pop 0.35s ease; transform-origin: left center; }
+@keyframes dk-blink { 50% { opacity: 0.55; } }
+
+.dk-boss {
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, calc(100vw - 32px));
+  z-index: 4;
+  pointer-events: none;
+  text-align: center;
+}
+.dk-boss__name { font: 700 0.8rem 'Chakra Petch', sans-serif; letter-spacing: 0.3em; color: #ff8a9c; text-shadow: 0 2px 6px #000; margin-bottom: 4px; }
+.dk-boss__track { height: 10px; border-radius: 999px; background: rgba(10, 10, 16, 0.75); border: 1px solid rgba(255, 90, 114, 0.5); overflow: hidden; }
+.dk-boss__fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff2e4d, #ff8a3c); box-shadow: 0 0 14px rgba(255, 46, 77, 0.8); transition: width 0.15s linear; }
+
+.dk-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 32%;
+  z-index: 6;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+}
+.dk-banner--on { animation: dk-banner 2.4s ease forwards; }
+.dk-banner__title {
+  font: 700 clamp(2.2rem, 9vw, 4.2rem)/1 'Chakra Petch', sans-serif;
+  letter-spacing: 0.12em;
+  color: #fff;
+  text-shadow: 0 0 24px rgba(255, 140, 40, 0.8), 0 4px 12px #000;
+}
+.dk-banner__sub { margin-top: 8px; font: 600 1rem Inter, sans-serif; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-2); text-shadow: 0 2px 6px #000; }
+.dk-banner--warn .dk-banner__title { color: #ff4d64; text-shadow: 0 0 26px rgba(255, 30, 60, 0.9), 0 4px 12px #000; }
+.dk-banner--warn.dk-banner--on { animation: dk-banner 2.4s ease forwards, dk-blink 0.4s steps(2) 5; }
+@keyframes dk-banner {
+  0% { opacity: 0; transform: scale(1.4); letter-spacing: 0.4em; }
+  12% { opacity: 1; transform: scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-12px); }
+}
+
+.dk-vignette, .dk-flash { position: fixed; inset: 0; pointer-events: none; z-index: 3; opacity: 0; }
+.dk-vignette { box-shadow: inset 0 0 120px 30px rgba(255, 20, 40, 0.85); }
+.dk-vignette--on { animation: dk-fade 0.5s ease-out; }
+.dk-flash { background: #fff; }
+.dk-flash--on { animation: dk-fade 0.6s ease-out; }
+@keyframes dk-fade { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+
+.dk-bomb {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 5;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: radial-gradient(circle at 35% 30%, #ff8a9c, #ff2e4d 55%, #7a0018);
+  color: #fff;
+  font: 700 0.8rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 22px rgba(255, 46, 77, 0.55);
+  cursor: pointer;
+  touch-action: none;
+}
+.dk-bomb:disabled { filter: grayscale(1); opacity: 0.4; }
+@media (pointer: fine) {
+  .dk-bomb { width: 64px; height: 64px; font-size: 0.7rem; opacity: 0.85; }
+}
+@media (max-width: 520px) {
+  .bar__hud { gap: 6px; font-size: 0.95rem; }
+  .bar__hud .chip { padding: 3px 9px; }
+}
