@@ -25,12 +25,14 @@
   "durable_objects": {
     "bindings": [
       { "name": "ROOMS", "class_name": "Room" },
-      { "name": "FIGHTS", "class_name": "FightRoom" }
+      { "name": "FIGHTS", "class_name": "FightRoom" },
+      { "name": "PARTIES", "class_name": "PartyRoom" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Room"] },
-    { "tag": "v2", "new_sqlite_classes": ["FightRoom"] }
+    { "tag": "v2", "new_sqlite_classes": ["FightRoom"] },
+    { "tag": "v3", "new_sqlite_classes": ["PartyRoom"] }
   ],
   "vars": {
     "LANDING_URL": "https://game.ktmtronix.com",

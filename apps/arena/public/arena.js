@@ -84,14 +84,90 @@ async function boot() {
   else route()
 }
 
-// The library and game pages are addressed by hash: /, /#deathmatch, /#fighter.
+// The library and game pages are addressed by hash: /, /#deathmatch, /#fighter, /#paint…
 const GAME_PAGES = { deathmatch: 'screen-game-deathmatch', fighter: 'screen-game-fighter' }
+
+// Arcade mini-games (games/minis), served at /play/<id>/.
+const MINI_GAMES = {
+  paint: {
+    title: 'Paint Clash',
+    facts: [['2–4', 'Players'], ['Online', 'Room codes'], ['Arcade', 'Genre']],
+    play: 'Play against bots, or host a room for up to 4 friends. Empty slots get bots.',
+    online: true,
+    about: '90-second battles: every tile you roll over turns your colour. Grab glowing paint bombs for a big splash. Most of the board wins. Works great on phones.',
+    keys: [['Move', '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows · joystick on phones']],
+    board: 'Most tiles painted in a round vs bots',
+  },
+  smash: {
+    title: 'Tower Smash',
+    facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Arcade', 'Genre']],
+    play: 'Hold to smash down the spinning tower. How deep can you go?',
+    about: 'A ball bounces on a spinning tower of rings. Hold to smash through them; let go to bounce. Dark red segments are deadly while you smash. Smash 8 rings in a row for FEVER and break through anything.',
+    keys: [['Smash', 'Hold mouse, finger or <kbd>Space</kbd>'], ['Bounce', 'Let go']],
+    board: 'Highest score in one run',
+  },
+  pong: {
+    title: 'Curve Clash',
+    facts: [['1–2', 'Players'], ['Online', 'Room codes'], ['Arcade', 'Genre']],
+    play: 'Climb the ladder against the computer, or host a 1v1 match.',
+    online: true,
+    about: '3D tunnel pong. Move your paddle while you hit to put spin on the ball and curve it past your opponent. Solo: 3 lives against a computer that gets sharper as you score. Online: first to 7.',
+    keys: [['Paddle', 'Mouse, finger drag, or arrow keys'], ['Spin', 'Move while you hit']],
+    board: 'Most points in a solo run',
+  },
+  flyer: {
+    title: 'Sky Dash',
+    facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Arcade', 'Genre']],
+    play: 'Tap to fly through the neon gates.',
+    about: 'One tap to boost. Thread the gaps between neon gates over a synthwave city. It gets faster the further you go.',
+    keys: [['Boost', 'Tap, click or <kbd>Space</kbd>']],
+    board: 'Most gates in one flight',
+  },
+}
 
 function route() {
   if (state.role) return // a game is running; ignore navigation
-  const page = GAME_PAGES[location.hash.slice(1)]
-  show(page || 'screen-home')
+  const id = location.hash.slice(1)
+  if (MINI_GAMES[id]) {
+    showMini(id)
+  } else {
+    show(GAME_PAGES[id] || 'screen-home')
+  }
   window.scrollTo(0, 0)
+}
+
+function showMini(id) {
+  const g = MINI_GAMES[id]
+  $('mini-icon').src = `/covers/${id}-icon.jpg`
+  $('mini-title').textContent = g.title
+  $('mini-facts').innerHTML = g.facts.map(([a, b]) => `<li><strong>${a}</strong><span>${b}</span></li>`).join('')
+  $('mini-play').href = `/play/${id}/`
+  $('mini-play-text').textContent = g.play
+  $('mini-join-form').hidden = !g.online
+  $('mini-join-form').onsubmit = e => {
+    e.preventDefault()
+    const code = $('mini-join-code').value.trim().toUpperCase()
+    if (code) location.href = `/play/${id}/?room=${encodeURIComponent(code)}`
+  }
+  $('mini-shots').innerHTML = `<img src="/covers/${id}-cover.jpg" alt="" loading="lazy" /><img src="/covers/${id}.jpg" alt="" loading="lazy" />`
+  $('mini-about').textContent = g.about
+  $('mini-keys').innerHTML = g.keys.map(([a, b]) => `<li><span>${a}</span><span>${b}</span></li>`).join('')
+  const list = $('mini-board')
+  list.innerHTML = '<li class="muted">Loading…</li>'
+  fetch(`/api/scores/${id}`)
+    .then(r => r.json())
+    .then(b => {
+      list.innerHTML = ''
+      if (!b.top?.length) list.innerHTML = '<li class="muted">No scores yet. Be the first!</li>'
+      for (const [i, row] of (b.top || []).slice(0, 5).entries()) {
+        const li = document.createElement('li')
+        li.append(Object.assign(document.createElement('span'), { textContent: `#${i + 1} ${row.name}` }))
+        li.append(Object.assign(document.createElement('b'), { textContent: row.best }))
+        list.append(li)
+      }
+    })
+    .catch(() => (list.innerHTML = ''))
+  show('screen-game-mini')
 }
 
 function setupFilters() {

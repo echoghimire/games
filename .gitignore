@@ -4,3 +4,4 @@ node_modules/
 **/.dev.vars
 wads/
 apps/arena/public/fighter/
+apps/arena/public/play/

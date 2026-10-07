@@ -352,3 +352,7 @@ a.tile:hover .tile-cover img { transform: scale(1.06); }
 .detail-hero .app-icon--lg { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 30px color-mix(in srgb, var(--accent) 30%, transparent); }
 .store-grid { grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); }
 @media (max-width: 600px) { .store-grid { grid-template-columns: 1fr; } }
+.mini-board { list-style: none; padding: 0; margin: 0; font-size: 0.92rem; }
+.mini-board li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.mini-board li:last-child { border-bottom: 0; }
+.mini-board .muted { color: var(--muted); border: 0; }

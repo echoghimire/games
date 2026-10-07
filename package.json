@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "dev:landing": "wrangler dev -c apps/landing/wrangler.jsonc --port 8787 --persist-to .wrangler/state --inspector-port 9230",
-    "dev:arena": "npm run build:fighter && wrangler dev -c apps/arena/wrangler.jsonc --port 8788 --persist-to .wrangler/state --inspector-port 9231",
+    "dev:arena": "npm run build:fighter && npm run build:minis && wrangler dev -c apps/arena/wrangler.jsonc --port 8788 --persist-to .wrangler/state --inspector-port 9231",
     "deploy:landing": "wrangler deploy -c apps/landing/wrangler.jsonc",
-    "deploy:arena": "npm run build:fighter && wrangler deploy -c apps/arena/wrangler.jsonc",
+    "deploy:arena": "npm run build:fighter && npm run build:minis && wrangler deploy -c apps/arena/wrangler.jsonc",
     "db:migrate:local": "wrangler d1 migrations apply ktm-arena --local -c apps/landing/wrangler.jsonc --persist-to .wrangler/state",
     "db:migrate:remote": "wrangler d1 migrations apply ktm-arena --remote -c apps/landing/wrangler.jsonc",
     "build:engine": "./scripts/build-engine.sh",
@@ -15,7 +15,9 @@
     "wads:remote": "./scripts/upload-wads.sh",
     "build:fighter": "vite build --config games/fighter/vite.config.ts",
     "dev:fighter": "vite --config games/fighter/vite.config.ts",
-    "typecheck:fighter": "tsc --noEmit -p games/fighter/tsconfig.json"
+    "typecheck:fighter": "tsc --noEmit -p games/fighter/tsconfig.json",
+    "build:minis": "vite build --config games/minis/vite.config.ts",
+    "typecheck:minis": "tsc --noEmit -p games/minis/tsconfig.json"
   },
   "devDependencies": {
     "@types/three": "^0.186.0",

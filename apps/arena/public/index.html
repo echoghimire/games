@@ -26,6 +26,8 @@
         <div class="chips" id="chips">
           <button class="chip is-on" data-filter="all">All</button>
           <button class="chip" data-filter="online">Online multiplayer</button>
+          <button class="chip" data-filter="arcade">Arcade</button>
+          <button class="chip" data-filter="phone">Phone-friendly</button>
           <button class="chip" data-filter="shooter">Shooter</button>
           <button class="chip" data-filter="fighting">Fighting</button>
         </div>
@@ -54,7 +56,47 @@
               </div>
             </div>
           </a>
-          <div class="tile tile--soon" data-tags="online shooter fighting">
+          <a class="tile" href="#paint" data-tags="online arcade phone">
+            <div class="tile-cover"><img src="/covers/paint-cover.jpg" alt="Paint Clash" loading="lazy" /></div>
+            <div class="tile-meta">
+              <img class="app-icon" src="/covers/paint-icon.jpg" alt="" />
+              <div>
+                <strong>Paint Clash</strong>
+                <span>Arcade · 2–4 players online</span>
+              </div>
+            </div>
+          </a>
+          <a class="tile" href="#smash" data-tags="arcade phone">
+            <div class="tile-cover"><img src="/covers/smash-cover.jpg" alt="Tower Smash" loading="lazy" /></div>
+            <div class="tile-meta">
+              <img class="app-icon" src="/covers/smash-icon.jpg" alt="" />
+              <div>
+                <strong>Tower Smash</strong>
+                <span>Arcade · one-touch</span>
+              </div>
+            </div>
+          </a>
+          <a class="tile" href="#pong" data-tags="online arcade phone">
+            <div class="tile-cover"><img src="/covers/pong-cover.jpg" alt="Curve Clash" loading="lazy" /></div>
+            <div class="tile-meta">
+              <img class="app-icon" src="/covers/pong-icon.jpg" alt="" />
+              <div>
+                <strong>Curve Clash</strong>
+                <span>Arcade · 1v1 online</span>
+              </div>
+            </div>
+          </a>
+          <a class="tile" href="#flyer" data-tags="arcade phone">
+            <div class="tile-cover"><img src="/covers/flyer-cover.jpg" alt="Sky Dash" loading="lazy" /></div>
+            <div class="tile-meta">
+              <img class="app-icon" src="/covers/flyer-icon.jpg" alt="" />
+              <div>
+                <strong>Sky Dash</strong>
+                <span>Arcade · one-tap</span>
+              </div>
+            </div>
+          </a>
+          <div class="tile tile--soon" data-tags="online arcade phone shooter fighting">
             <div class="tile-cover"><img src="/covers/soon-cover.jpg" alt="More games coming soon" loading="lazy" /></div>
             <div class="tile-meta">
               <img class="app-icon" src="/logo.svg" alt="" />
@@ -114,6 +156,41 @@
           <li><span>Run</span><span><kbd>Shift</kbd></span></li>
           <li><span>Map · chat · menu</span><span><kbd>Tab</kbd> <kbd>T</kbd> <kbd>Esc</kbd></span></li>
         </ul>
+      </section>
+
+      <!-- Game page: the arcade mini-games (filled in by arena.js from MINI_GAMES) -->
+      <section class="screen detail" id="screen-game-mini" hidden>
+        <a class="back-link" href="#">← All games</a>
+        <div class="detail-hero">
+          <img class="app-icon app-icon--lg" id="mini-icon" src="" alt="" />
+          <div>
+            <h1 id="mini-title"></h1>
+            <p class="dev">Tronix Arena Originals</p>
+            <ul class="facts" id="mini-facts"></ul>
+          </div>
+        </div>
+        <div class="cards">
+          <a class="card card--primary" id="mini-play" href="#">
+            <strong>Play</strong>
+            <span id="mini-play-text"></span>
+          </a>
+          <form class="card" id="mini-join-form">
+            <strong>Join with a code</strong>
+            <div class="row">
+              <input id="mini-join-code" maxlength="6" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              <button class="btn">Join</button>
+            </div>
+          </form>
+          <div class="card" id="mini-board-card">
+            <strong>Top players</strong>
+            <ol class="mini-board" id="mini-board"></ol>
+          </div>
+        </div>
+        <div class="shots" id="mini-shots"></div>
+        <h2 class="section-title">About this game</h2>
+        <p class="about" id="mini-about"></p>
+        <h2 class="section-title">Controls</h2>
+        <ul class="keys" id="mini-keys"></ul>
       </section>
 
       <!-- Game page: Iron Arena -->
@@ -247,7 +324,7 @@
 
     <footer class="credits">
       Built on <a href="https://github.com/cloudflare/doom-wasm">Chocolate Doom / doom-wasm</a> (GPL-2.0, <a href="https://github.com/echoghimire/games">source</a>)
-      and <a href="https://freedoom.github.io/">Freedoom</a> game data (BSD). Iron Arena © Andrea Acanfora, used with permission. <a href="https://game.ktmtronix.com/licenses">Licenses</a>. Not affiliated with id Software.
+      and <a href="https://freedoom.github.io/">Freedoom</a> game data (BSD). Iron Arena © Andrea Acanfora, used with permission. Arcade games are Tronix Arena originals. <a href="https://game.ktmtronix.com/licenses">Licenses</a>. Not affiliated with id Software.
     </footer>
 
     <script src="/vendor/nipplejs-0.10.2.min.js" defer></script>

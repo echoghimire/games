@@ -7,11 +7,17 @@ import { MAX_PLAYERS, ROOM_CODE_RE, newRoomCode } from './room.js'
 
 export { Room } from './room.js'
 export { FightRoom } from './fightroom.js'
+export { PartyRoom } from './partyroom.js'
 
 // WADs are uploaded to R2 under this version prefix (see scripts/upload-wads.sh)
 // so the browser can cache them forever.
 const WADS = new Set(['freedm.wad', 'freedoom1.wad', 'freedoom2.wad'])
 const MODES = new Set(['deathmatch', 'altdeath', 'coop'])
+
+// Mini-games with online rooms, and their player limits.
+const PARTY_GAMES = { paint: 4, pong: 2 }
+// Mini-games with leaderboards, and the highest score we accept (sanity cap).
+const SCORE_GAMES = { smash: 100000, flyer: 10000, pong: 1000, paint: 784 }
 
 export default {
   async fetch(request, env) {
@@ -105,6 +111,53 @@ async function api(request, env, url, user) {
     return json({ error: 'Could not allocate a room, try again.' }, 503)
   }
 
+  // Mini-game rooms (Paint Clash, Curve Clash), see partyroom.js.
+  if (request.method === 'POST' && url.pathname === '/api/party/rooms') {
+    let body = {}
+    try {
+      body = await request.json()
+    } catch {}
+    const max = PARTY_GAMES[body.game]
+    if (!max) return json({ error: 'Unknown game' }, 400)
+    const code = await createRoom(env, env.PARTIES, user, { game: body.game, max })
+    if (code) return json({ code }, 201)
+    return json({ error: 'Could not allocate a room, try again.' }, 503)
+  }
+  const pr = url.pathname.match(/^\/api\/party\/rooms\/([^/]+)(\/ws)?$/)
+  if (pr) {
+    const code = pr[1].toUpperCase()
+    if (!ROOM_CODE_RE.test(code)) return json({ error: 'Room not found' }, 404)
+    const stub = roomStub(env, code, env.PARTIES)
+    const headers = { 'x-user-id': user.id, 'x-user-name': user.display_name }
+    if (pr[2] === '/ws') return upgradeToRoom(request, env, stub, headers)
+    if (request.method === 'GET') return stub.fetch('https://room/info', { headers })
+  }
+
+  // Leaderboards: best score per player per game.
+  const sc = url.pathname.match(/^\/api\/scores\/([a-z]+)$/)
+  if (sc) {
+    const game = sc[1]
+    const cap = SCORE_GAMES[game]
+    if (!cap) return json({ error: 'Unknown game' }, 404)
+    if (request.method === 'POST') {
+      let body = {}
+      try {
+        body = await request.json()
+      } catch {}
+      const score = Number(body.score)
+      if (!Number.isInteger(score) || score < 0 || score > cap) return json({ error: 'Invalid score' }, 400)
+      await env.DB.prepare(
+        `INSERT INTO scores (game, user_id, name, best, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT (game, user_id) DO UPDATE SET
+           best = MAX(best, excluded.best), name = excluded.name,
+           updated_at = CASE WHEN excluded.best > best THEN excluded.updated_at ELSE updated_at END`,
+      )
+        .bind(game, user.id, user.display_name, score, Math.floor(Date.now() / 1000))
+        .run()
+    }
+    if (request.method === 'POST' || request.method === 'GET') return json(await leaderboard(env, game, user))
+  }
+
   // Iron Arena (fighter) online rooms: two players, see fightroom.js.
   if (request.method === 'POST' && url.pathname === '/api/fight/rooms') {
     const code = await createRoom(env, env.FIGHTS, user)
@@ -154,4 +207,19 @@ async function wad(request, env, url) {
   headers.set('etag', obj.httpEtag)
   headers.set('cache-control', 'private, max-age=31536000, immutable')
   return new Response(obj.body, { headers })
+}
+
+async function leaderboard(env, game, user) {
+  const top = await env.DB.prepare('SELECT name, best FROM scores WHERE game = ? ORDER BY best DESC, updated_at ASC LIMIT 20')
+    .bind(game)
+    .all()
+  const mine = await env.DB.prepare('SELECT best FROM scores WHERE game = ? AND user_id = ?').bind(game, user.id).first()
+  let rank = null
+  if (mine) {
+    const above = await env.DB.prepare('SELECT COUNT(*) AS n FROM scores WHERE game = ? AND best > ?')
+      .bind(game, mine.best)
+      .first()
+    rank = above.n + 1
+  }
+  return { top: top.results, me: mine ? { best: mine.best, rank } : null }
 }

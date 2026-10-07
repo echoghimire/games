@@ -1,7 +1,8 @@
 # Tronix Arena
 
 Paid, browser-based multiplayer games running entirely on Cloudflare: a 4-player
-deathmatch shooter and **Iron Arena**, a 1v1 3D fighter.
+deathmatch shooter, **Iron Arena** (a 1v1 3D fighter), and four original arcade games
+with global leaderboards: **Paint Clash**, **Tower Smash**, **Curve Clash** and **Sky Dash**.
 It's a rebranded and fixed-up fork of Cloudflare's [doom-wasm] (the Chocolate Doom
 engine compiled to WebAssembly) and their [doom-workers] relay. It uses [Freedoom]
 game data, so there are no id Software assets.
@@ -30,6 +31,7 @@ shared/            session cookies, password hashing, Stripe (used by both Worke
 migrations/        D1 schema (users, Stripe events)
 engine/            Doom engine source (GPL-2.0), built with ./scripts/build-engine.sh
 games/fighter/     Iron Arena 3D fighter (used with the author's permission), see games/fighter/TRONIX.md
+games/minis/       Arcade games (Tronix Arena originals), see games/minis/README.md
 scripts/           build-engine.sh, upload-wads.sh
 test/              unit tests (npm test)
 ```
@@ -98,6 +100,19 @@ behind the same paywall, with invite links at `/f/CODE`.
   `npm run dev:arena` and `npm run deploy:arena` run it automatically.
 - **Players far apart** (different continents) will feel the input delay; the
   next step would be rollback netcode.
+
+## Arcade games
+
+`games/minis/` holds four originals served at `/play/<game>/`; see
+[games/minis/README.md](games/minis/README.md). They use two new server pieces:
+
+- **Leaderboards:** `migrations/0002_scores.sql` (best score per player per game) and
+  `GET/POST /api/scores/<game>` on the arena Worker.
+- **Party rooms:** a `PartyRoom` Durable Object (2–4 players) for Paint Clash and
+  Curve Clash, at `/api/party/rooms`.
+
+After pulling this change, apply the new migration once:
+`npm run db:migrate:remote`.
 
 ## Local development
 

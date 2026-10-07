@@ -1,0 +1,203 @@
+:root {
+  --bg: #07070b;
+  --panel: rgba(18, 18, 26, 0.92);
+  --line: rgba(255, 255, 255, 0.12);
+  --text: #f1f0f7;
+  --muted: #a3a1b4;
+  --accent: #ff5a1f;
+  --accent-2: #ffc93c;
+  --good: #39ff88;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.45 Inter, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+canvas#c { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent);
+}
+.bar__back {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font: 700 0.9rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  background: rgba(10, 10, 16, 0.7);
+  border: 1px solid var(--line);
+}
+.bar__back img { width: 24px; height: 24px; }
+.bar__title { font: 700 1.05rem "Chakra Petch", sans-serif; letter-spacing: 0.08em; text-shadow: 0 2px 6px #000; white-space: nowrap; }
+.bar__hud {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  font: 700 1.15rem 'Chakra Petch', sans-serif;
+  text-shadow: 0 2px 6px #000;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(10, 10, 16, 0.7);
+  border: 1px solid var(--line);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.75));
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+  overflow-y: auto;
+}
+.overlay--on { opacity: 1; visibility: visible; transition: opacity 0.2s ease; }
+
+.card {
+  width: min(440px, 100%);
+  padding: 26px 24px 22px;
+  border-radius: 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 60px rgba(255, 90, 31, 0.15);
+  text-align: center;
+  user-select: text;
+}
+.card__kicker { font: 700 0.85rem 'Chakra Petch', sans-serif; letter-spacing: 0.28em; color: var(--accent-2); }
+.card__title { font: 700 2rem/1.1 'Chakra Petch', sans-serif; margin: 6px 0 12px; }
+.card__body { color: var(--muted); }
+.card__body p { margin: 0 0 10px; }
+.card__buttons { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+
+.btn {
+  font: 700 1rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.06em;
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--muted); }
+.btn--primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #1a0700;
+  border: 0;
+  box-shadow: 0 6px 22px rgba(255, 90, 31, 0.4);
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.row { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+.code-input {
+  width: 9em;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  font: 700 1.05rem 'Chakra Petch', monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.room-code { font: 700 2.4rem 'Chakra Petch', monospace; letter-spacing: 0.25em; color: var(--accent-2); }
+.players { list-style: none; padding: 0; margin: 12px 0 0; text-align: left; }
+.players li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); margin-bottom: 6px; color: var(--text); }
+.players i { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+
+.score { font: 700 4rem/1 'Chakra Petch', sans-serif; color: #fff; text-shadow: 0 0 30px rgba(255, 140, 40, 0.5); }
+.score__unit { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 10px; }
+.stats { color: var(--accent-2); font-weight: 600; margin-bottom: 8px; }
+.board { list-style: none; padding: 0; margin: 0; text-align: left; max-height: 220px; overflow-y: auto; }
+.board li { display: grid; grid-template-columns: 3em 1fr auto; gap: 8px; padding: 5px 10px; border-radius: 8px; color: var(--text); }
+.board li:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
+.board__me { background: rgba(255, 90, 31, 0.18) !important; }
+.board__rank { color: var(--muted); }
+.board__score { font-weight: 700; }
+
+kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font-size: 0.85em; color: var(--text); }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 16px);
+  z-index: 20;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(10, 10, 16, 0.92);
+  border: 1px solid var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+.toast--on { opacity: 1; transform: translate(-50%, 0); }
+
+.stick {
+  position: fixed;
+  left: 22px;
+  bottom: 22px;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  z-index: 6;
+  touch-action: none;
+}
+.stick__knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 20px rgba(255, 90, 31, 0.5);
+}
+
+[hidden] { display: none !important; }
+
+@media (max-width: 520px) {
+  .bar__title { display: none; }
+  .card__title { font-size: 1.6rem; }
+}
