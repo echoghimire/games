@@ -4,6 +4,7 @@
 import { currentUser, hasAccess } from '../../../shared/auth.js'
 import { json, redirect, sameOrigin, withSecurityHeaders } from '../../../shared/http.js'
 import { MAX_PLAYERS, ROOM_CODE_RE, newRoomCode } from './room.js'
+import { withScoresTable } from './scores.js'
 
 export { Room } from './room.js'
 export { FightRoom } from './fightroom.js'
@@ -145,23 +146,28 @@ async function api(request, env, url, user) {
     const cap = SCORE_GAMES[game]
     if (!cap && !SERVER_SCORED.has(game)) return json({ error: 'Unknown game' }, 404)
     if (request.method === 'POST' && !cap) return json({ error: 'Scores for this game come from the game server' }, 403)
+    let body = {}
     if (request.method === 'POST') {
-      let body = {}
       try {
         body = await request.json()
       } catch {}
-      const score = Number(body.score)
-      if (!Number.isInteger(score) || score < 0 || score > cap) return json({ error: 'Invalid score' }, 400)
-      await env.DB.prepare(
-        `INSERT INTO scores (game, user_id, name, best, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)
-         ON CONFLICT (game, user_id) DO UPDATE SET
-           best = MAX(best, excluded.best), name = excluded.name,
-           updated_at = CASE WHEN excluded.best > best THEN excluded.updated_at ELSE updated_at END`,
-      )
-        .bind(game, user.id, user.display_name, score, Math.floor(Date.now() / 1000))
-        .run()
     }
-    if (request.method === 'POST' || request.method === 'GET') return json(await leaderboard(env, game, user))
+    return withScoresTable(env, async () => {
+      if (request.method === 'POST') {
+        const score = Number(body.score)
+        if (!Number.isInteger(score) || score < 0 || score > cap) return json({ error: 'Invalid score' }, 400)
+        await env.DB.prepare(
+          `INSERT INTO scores (game, user_id, name, best, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)
+           ON CONFLICT (game, user_id) DO UPDATE SET
+             best = MAX(best, excluded.best), name = excluded.name,
+             updated_at = CASE WHEN excluded.best > best THEN excluded.updated_at ELSE updated_at END`,
+        )
+          .bind(game, user.id, user.display_name, score, Math.floor(Date.now() / 1000))
+          .run()
+      }
+      if (request.method === 'POST' || request.method === 'GET') return json(await leaderboard(env, game, user))
+      return json({ error: 'Not found' }, 404)
+    })
   }
 
   // WPilot rooms run the game server in a Durable Object (wpilotroom.js).

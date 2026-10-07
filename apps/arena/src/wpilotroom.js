@@ -9,6 +9,7 @@
 
 import { DurableObject } from 'cloudflare:workers'
 import { WPilotServer } from './wpilot/server.js'
+import { withScoresTable } from './scores.js'
 
 const MAX_MESSAGES_PER_SECOND = 200
 const MAX_MESSAGE_BYTES = 4 * 1024
@@ -67,6 +68,8 @@ export class WPilotRoom extends DurableObject {
        ON CONFLICT (game, user_id) DO UPDATE SET best = best + 1, name = excluded.name, updated_at = excluded.updated_at`,
     )
     const writes = winners.filter((w) => w.userId).map((w) => stmt.bind(w.userId, w.name, now))
-    if (writes.length) this.ctx.waitUntil(this.env.DB.batch(writes).catch((err) => console.error(err)))
+    if (writes.length) {
+      this.ctx.waitUntil(withScoresTable(this.env, () => this.env.DB.batch(writes)).catch((err) => console.error(err)))
+    }
   }
 }
