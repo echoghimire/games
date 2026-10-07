@@ -1,6 +1,7 @@
 # Tronix Arena
 
-Paid, browser-based multiplayer deathmatch running entirely on Cloudflare.
+Paid, browser-based multiplayer games running entirely on Cloudflare: a 4-player
+deathmatch shooter and **Iron Arena**, a 1v1 3D fighter.
 It's a rebranded and fixed-up fork of Cloudflare's [doom-wasm] (the Chocolate Doom
 engine compiled to WebAssembly) and their [doom-workers] relay. It uses [Freedoom]
 game data, so there are no id Software assets.
@@ -28,6 +29,7 @@ apps/arena/        Worker, Room Durable Object, game page, compiled engine
 shared/            session cookies, password hashing, Stripe (used by both Workers)
 migrations/        D1 schema (users, Stripe events)
 engine/            Doom engine source (GPL-2.0), built with ./scripts/build-engine.sh
+games/fighter/     Iron Arena 3D fighter (used with the author's permission), see games/fighter/TRONIX.md
 scripts/           build-engine.sh, upload-wads.sh
 test/              unit tests (npm test)
 ```
@@ -79,6 +81,23 @@ test/              unit tests (npm test)
   player count) and a live player list.
 - WAD downloads show a progress bar and are cached by the browser for a year.
 - Mouse capture on click, a fullscreen button, and touch controls on phones.
+
+## Iron Arena (3D fighter)
+
+`games/fighter/` is [Iron Arena](https://github.com/AndreaAcanfora/iron-arena) by
+Andrea Acanfora (Three.js + TypeScript + Vite), used **with the author's permission**
+and extended with **online 1v1**. It's served by the arena Worker at `/fighter`
+behind the same paywall, with invite links at `/f/CODE`.
+
+- **Online play** is delay-based lockstep: each player's input is sent a few ticks
+  ahead (picked from the measured ping) through a two-player `FightRoom` Durable
+  Object, and a tick only runs once both inputs are known. Both browsers run the
+  exact same fight; a checksum every second detects desyncs. Details in
+  [games/fighter/TRONIX.md](games/fighter/TRONIX.md).
+- `npm run build:fighter` builds it into `apps/arena/public/fighter/` (git-ignored).
+  `npm run dev:arena` and `npm run deploy:arena` run it automatically.
+- **Players far apart** (different continents) will feel the input delay; the
+  next step would be rollback netcode.
 
 ## Local development
 
@@ -147,6 +166,8 @@ npm run build:engine
   at `/licenses`.
 - **Branding:** don't use "Doom" in the product name or marketing. It's an
   id Software trademark.
+- **`games/fighter/` (Iron Arena)** has no open-source licence: it's used with the
+  author's permission. Keep that permission in writing. Its assets are CC0.
 - The Worker and web code in `apps/` and `shared/` is yours to license however you like.
 
 [doom-wasm]: https://github.com/cloudflare/doom-wasm

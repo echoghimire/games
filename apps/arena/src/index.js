@@ -6,6 +6,7 @@ import { json, redirect, sameOrigin, withSecurityHeaders } from '../../../shared
 import { MAX_PLAYERS, ROOM_CODE_RE, newRoomCode } from './room.js'
 
 export { Room } from './room.js'
+export { FightRoom } from './fightroom.js'
 
 // WADs are uploaded to R2 under this version prefix (see scripts/upload-wads.sh)
 // so the browser can cache them forever.
@@ -21,9 +22,13 @@ export default {
 
       if (url.pathname.startsWith('/api/')) return withSecurityHeaders(await api(request, env, url, user))
       if (url.pathname.startsWith('/wads/')) return wad(request, env, url)
-      // /r/CODE is a shareable invite link; the page reads the code from the path.
+      // /r/CODE (deathmatch) and /f/CODE (fighter) are shareable invite links;
+      // the page reads the code from the path.
       if (/^\/r\/[A-Za-z0-9]+$/.test(url.pathname)) {
         return withSecurityHeaders(await env.ASSETS.fetch(new Request(new URL('/', url), request)))
+      }
+      if (/^\/f\/[A-Za-z0-9]+$/.test(url.pathname)) {
+        return withSecurityHeaders(await env.ASSETS.fetch(new Request(new URL('/fighter', url), request)))
       }
       return withSecurityHeaders(await env.ASSETS.fetch(request))
     } catch (err) {
@@ -44,8 +49,34 @@ function denied(request, env, url, user) {
   return redirect(`${env.LANDING_URL}/pay`)
 }
 
-function roomStub(env, code) {
-  return env.ROOMS.get(env.ROOMS.idFromName(code))
+function roomStub(env, code, ns = env.ROOMS) {
+  return ns.get(ns.idFromName(code))
+}
+
+// Forwards a WebSocket upgrade to a room object, with the player's identity.
+function upgradeToRoom(request, env, stub, headers) {
+  if (request.headers.get('Upgrade') !== 'websocket') return json({ error: 'Expected WebSocket' }, 426)
+  // Browsers don't let pages set headers on WebSockets, so the Origin check
+  // done for POSTs doesn't cover GET upgrades; check here instead
+  // (cross-site WebSocket hijacking).
+  if (!sameOrigin(request, env)) return json({ error: 'Bad origin' }, 403)
+  const upgrade = new Request('https://room/ws', request)
+  for (const [k, v] of Object.entries(headers)) upgrade.headers.set(k, v)
+  return stub.fetch(upgrade)
+}
+
+// Creates a room with a fresh code. Codes are short, so retry on the rare
+// collision with a live room.
+async function createRoom(env, ns, user, extra = {}) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = newRoomCode()
+    const res = await roomStub(env, code, ns).fetch('https://room/init', {
+      method: 'POST',
+      body: JSON.stringify({ code, hostUserId: user.id, hostName: user.display_name, ...extra }),
+    })
+    if (res.status === 201) return code
+  }
+  return null
 }
 
 async function api(request, env, url, user) {
@@ -69,16 +100,25 @@ async function api(request, env, url, user) {
       timelimit: Math.min(Math.max(parseInt(body.timelimit, 10) || 0, 0), 60),
       players: Math.min(Math.max(parseInt(body.players, 10) || MAX_PLAYERS, 2), MAX_PLAYERS),
     }
-    // Codes are short, so retry on the rare collision with a live room.
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const code = newRoomCode()
-      const res = await roomStub(env, code).fetch('https://room/init', {
-        method: 'POST',
-        body: JSON.stringify({ code, hostUserId: user.id, hostName: user.display_name, settings }),
-      })
-      if (res.status === 201) return json({ code, settings }, 201)
-    }
+    const code = await createRoom(env, env.ROOMS, user, { settings })
+    if (code) return json({ code, settings }, 201)
     return json({ error: 'Could not allocate a room, try again.' }, 503)
+  }
+
+  // Iron Arena (fighter) online rooms: two players, see fightroom.js.
+  if (request.method === 'POST' && url.pathname === '/api/fight/rooms') {
+    const code = await createRoom(env, env.FIGHTS, user)
+    if (code) return json({ code }, 201)
+    return json({ error: 'Could not allocate a room, try again.' }, 503)
+  }
+  const f = url.pathname.match(/^\/api\/fight\/rooms\/([^/]+)(\/ws)?$/)
+  if (f) {
+    const code = f[1].toUpperCase()
+    if (!ROOM_CODE_RE.test(code)) return json({ error: 'Room not found' }, 404)
+    const stub = roomStub(env, code, env.FIGHTS)
+    const headers = { 'x-user-id': user.id, 'x-user-name': user.display_name }
+    if (f[2] === '/ws') return upgradeToRoom(request, env, stub, headers)
+    if (request.method === 'GET') return stub.fetch('https://room/info', { headers })
   }
 
   const m = url.pathname.match(/^\/api\/rooms\/([^/]+)(\/ws|\/start)?$/)
@@ -88,15 +128,7 @@ async function api(request, env, url, user) {
     const stub = roomStub(env, code)
     const headers = { 'x-user-id': user.id, 'x-user-name': user.display_name }
 
-    if (m[2] === '/ws') {
-      if (request.headers.get('Upgrade') !== 'websocket') return json({ error: 'Expected WebSocket' }, 426)
-      // Browsers don't let pages set headers on WebSockets, so the Origin check
-      // above is skipped for GET; do it here instead (cross-site WebSocket hijacking).
-      if (!sameOrigin(request, env)) return json({ error: 'Bad origin' }, 403)
-      const upgrade = new Request('https://room/ws', request)
-      for (const [k, v] of Object.entries(headers)) upgrade.headers.set(k, v)
-      return stub.fetch(upgrade)
-    }
+    if (m[2] === '/ws') return upgradeToRoom(request, env, stub, headers)
     if (m[2] === '/start' && request.method === 'POST') {
       return stub.fetch('https://room/start', { method: 'POST', headers })
     }

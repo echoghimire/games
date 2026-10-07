@@ -23,9 +23,15 @@
   ],
   "r2_buckets": [{ "binding": "WADS", "bucket_name": "ktm-arena-wads" }],
   "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+    "bindings": [
+      { "name": "ROOMS", "class_name": "Room" },
+      { "name": "FIGHTS", "class_name": "FightRoom" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Room"] },
+    { "tag": "v2", "new_sqlite_classes": ["FightRoom"] }
+  ],
   "vars": {
     "LANDING_URL": "https://game.ktmtronix.com",
     "ARENA_URL": "https://arena.ktmtronix.com",
