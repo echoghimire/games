@@ -63,7 +63,14 @@ function renderNav(me) {
 // ---------------------------------------------------------------- home
 
 async function home(me) {
-  const loads = [loadRewards(), loadBoards('current'), loadHall()]
+  if (me.user) {
+    // Logged in: your stuff first, the game list last.
+    document.body.classList.add('signed-in')
+    $('hero').hidden = true
+    $('dash').hidden = false
+    document.querySelector('main').append($('showcase'))
+  }
+  const loads = [loadRewards(), loadBoards(), loadHall()]
   if (me.user) loads.push(loadDashboard(me))
   for (const tab of document.querySelectorAll('#board-tabs .tab')) {
     tab.onclick = () => {
@@ -74,45 +81,50 @@ async function home(me) {
   await Promise.allSettled(loads)
 }
 
+// Seasons end at midnight Nepal time (UTC+5:45) on the 1st of next month.
+function seasonEnd(season) {
+  const [y, m] = season.split('-').map(Number)
+  return Date.UTC(y, m, 1) - (5 * 60 + 45) * 60000
+}
+
 async function loadDashboard(me) {
-  $('hero').hidden = true
-  $('dash').hidden = false
   $('dash-name').textContent = me.user.name
   const d = await api('/api/dashboard')
-  $('dash-season').textContent = `${seasonName(d.season)} season · ends in ${daysLeft(d.seasonEndsAt)}`
+  $('dash-season').textContent = `${seasonName(d.season)} season · ${daysLeft(d.seasonEndsAt)} left`
 
   // Pass status.
   const card = $('pass-card')
   card.innerHTML = ''
   const pay = d.pass.payment
   if (d.pass.active) {
-    card.append(h('p', { className: 'eyebrow' }, 'Arena pass'), h('strong', {}, `Active · ${daysLeft(d.pass.paidUntil * 1000)} left`), h('a', { className: 'btn small', href: '/play' }, 'Play now'))
+    card.append(h('div', {}, h('p', { className: 'eyebrow' }, 'Arena pass'), h('strong', {}, `${daysLeft(d.pass.paidUntil * 1000)} left`)), h('a', { className: 'btn', href: '/play' }, 'Play'))
   } else if (pay?.status === 'submitted') {
-    card.append(h('p', { className: 'eyebrow' }, 'Arena pass'), h('strong', {}, 'Payment being checked'), h('span', { className: 'muted small' }, `Reference ${pay.reference}`))
+    card.append(h('div', {}, h('p', { className: 'eyebrow' }, 'Arena pass'), h('strong', {}, 'Checking payment…'), h('span', { className: 'muted small' }, pay.reference)))
   } else {
-    card.append(h('p', { className: 'eyebrow' }, 'Arena pass'), h('strong', {}, pay?.status === 'rejected' ? 'Payment not found' : 'No active pass'), h('a', { className: 'btn small', href: '/pay' }, 'Get your pass'))
+    card.append(h('div', {}, h('p', { className: 'eyebrow' }, 'Arena pass'), h('strong', {}, pay?.status === 'rejected' ? 'Payment not found' : 'Not active')), h('a', { className: 'btn', href: '/pay' }, 'Get pass'))
   }
 
-  const tickets = d.drop.seasonTickets
   $('stat-row').replaceChildren(
-    stat('Plays this season', fmt(d.totals.seasonPlays)),
-    stat('Games played', `${d.totals.gamesPlayed} / ${d.games.length}`),
-    stat('Podium spots', fmt(d.totals.podiums), d.totals.podiums ? 'Top 3 right now: hold on until month end!' : 'Reach the top 3 of any game'),
-    stat('Raffle tickets', fmt(tickets), 'From daily supply drops'),
+    stat('Plays', fmt(d.totals.seasonPlays)),
+    stat('Games', `${d.totals.gamesPlayed}/${d.games.length}`),
+    stat('Top 3', fmt(d.totals.podiums), d.totals.podiums > 0),
+    stat('Tickets', fmt(d.drop.seasonTickets), false, 'tickets'),
   )
 
+  const played = d.games.filter(g => g.best != null)
   $('my-games').replaceChildren(
-    ...d.games.map(g =>
-      h(
-        'tr',
-        {},
-        h('td', {}, g.title),
-        h('td', {}, g.seasonBest == null ? '–' : `${fmt(g.seasonBest)} ${g.unit}`),
-        h('td', { className: g.seasonRank && g.seasonRank <= 3 ? 'podium' : '' }, g.seasonRank ? medal(g.seasonRank) : '–'),
-        h('td', {}, g.best == null ? '–' : fmt(g.best)),
-        h('td', {}, g.rank ? `#${g.rank}` : '–'),
-      ),
-    ),
+    ...(played.length
+      ? played.map(g =>
+          h(
+            'tr',
+            {},
+            h('td', {}, g.title),
+            h('td', {}, g.seasonBest == null ? '–' : fmt(g.seasonBest), h('span', { className: 'muted small' }, g.seasonBest == null ? '' : ` ${g.unit}`)),
+            h('td', { className: g.seasonRank && g.seasonRank <= 3 ? 'podium' : '' }, g.seasonRank ? medal(g.seasonRank) : '–'),
+            h('td', { className: 'muted' }, fmt(g.best)),
+          ),
+        )
+      : [h('tr', {}, h('td', { colSpan: 4, className: 'muted' }, 'No scores yet. Play any arcade game to get on the board.'))]),
   )
 
   $('drop-open').onclick = async () => {
@@ -122,7 +134,7 @@ async function loadDashboard(me) {
     try {
       const [r] = await Promise.all([api('/api/drop', {}), new Promise(ok => setTimeout(ok, 1100))])
       renderDrop(r.drop, true, true)
-      const t = document.querySelector('.stat-row .stat:last-child strong')
+      const t = document.querySelector('#stat-row .tickets strong')
       if (t) t.textContent = fmt(r.seasonTickets)
     } catch (err) {
       crate.className = 'crate'
@@ -136,20 +148,16 @@ async function loadDashboard(me) {
   if (d.wins.length) {
     $('trophies').hidden = false
     $('trophies').replaceChildren(
-      h('p', { className: 'eyebrow' }, 'Your trophies'),
-      h(
-        'div',
-        { className: 'trophy-row' },
-        d.wins.map(w =>
-          h('div', { className: 'trophy' }, h('span', { className: 'trophy-medal' }, medal(w.rank)), h('strong', {}, w.title), h('span', { className: 'muted small' }, `${seasonName(w.season)} · ${w.prize || 'Prize'} · ${w.status}`)),
-        ),
+      h('p', { className: 'eyebrow' }, 'Trophies'),
+      ...d.wins.map(w =>
+        h('span', { className: 'trophy', title: `${seasonName(w.season)} · ${w.prize || 'Prize'} · ${w.status}` }, h('span', { className: 'trophy-medal' }, w.game === 'raffle' ? '🎁' : medal(w.rank)), h('b', {}, w.title), w.prize ? h('span', { className: 'muted' }, `· ${w.prize}${w.status === 'shipped' ? ' ✓' : ''}`) : null),
       ),
     )
   }
 }
 
-function stat(label, value, hint) {
-  return h('div', { className: 'stat' }, h('span', { className: 'muted small' }, label), h('strong', {}, value), hint ? h('span', { className: 'muted small' }, hint) : null)
+function stat(label, value, hot, cls = '') {
+  return h('div', { className: `stat ${cls}${hot ? ' hot' : ''}` }, h('strong', {}, value), h('span', {}, label))
 }
 
 function renderDrop(drop, active, justOpened) {
@@ -159,74 +167,94 @@ function renderDrop(drop, active, justOpened) {
     crate.className = `crate open ${drop.rarity}${justOpened ? ' burst' : ''}`
     $('drop-result').replaceChildren(
       h('span', { className: `rarity ${drop.rarity}` }, drop.rarity.toUpperCase()),
-      ` · +${drop.tickets} raffle ticket${drop.tickets === 1 ? '' : 's'}`,
+      ` +${drop.tickets} ticket${drop.tickets === 1 ? '' : 's'}`,
     )
-    btn.textContent = 'Come back tomorrow'
+    btn.textContent = 'Next crate tomorrow'
     btn.disabled = true
   } else if (!active) {
-    btn.textContent = 'Get a pass to open drops'
+    btn.textContent = 'Get a pass to open'
     btn.disabled = false
     btn.onclick = () => location.assign('/pay')
   }
 }
 
+// Staff announcements from /admin. The prize banner covers the rest.
 async function loadRewards() {
-  const grid = $('reward-grid')
   let rewards = []
   try {
     rewards = (await api('/api/rewards')).rewards
   } catch {}
-  const defaults = [
-    { title: 'Monthly champions', body: 'Finish a season in the top 3 of any game and KTM Tronix sends you a prize.', prize: 'Merch & gear', kind: 'trophy' },
-    { title: 'Daily supply drop', body: 'Open a free crate every day. Legendary drops give 15 raffle tickets.', prize: 'Merch raffle', kind: 'crate' },
-    { title: 'Hall of Legends', body: 'Every season champion is honoured forever on this page.', prize: 'Glory', kind: 'crown' },
-  ]
-  const items = rewards.length ? rewards : defaults
-  grid.replaceChildren(
-    ...items.map(r =>
+  $('reward-grid').replaceChildren(
+    ...rewards.slice(0, 3).map(r =>
       h(
         'article',
-        { className: `reward${r.pinned ? ' pinned' : ''}` },
-        r.imageUrl ? h('img', { src: r.imageUrl, alt: '', loading: 'lazy' }) : h('div', { className: `reward-art ${r.kind || 'trophy'}` }),
-        h('div', { className: 'reward-text' }, r.prize ? h('span', { className: 'reward-prize' }, r.prize) : null, h('strong', {}, r.title), h('p', { className: 'muted' }, r.body)),
+        { className: `announcement${r.pinned ? ' pinned' : ''}` },
+        r.imageUrl ? h('img', { src: r.imageUrl, alt: '', loading: 'lazy' }) : null,
+        h(
+          'div',
+          {},
+          r.prize ? h('span', { className: 'reward-prize' }, r.prize) : null,
+          h('strong', {}, r.title),
+          h('p', { className: 'muted small' }, r.body),
+          r.endsAt ? h('span', { className: 'small ends' }, `Ends in ${daysLeft(r.endsAt * 1000)}`) : null,
+        ),
       ),
     ),
   )
 }
 
-async function loadBoards(which) {
-  const grid = $('board-grid')
+let boardData = null
+let boardGame = null
+
+async function loadBoards(which = 'current') {
   try {
     const q = which === 'all' ? '?season=all' : ''
-    const { season, games } = await api(`/api/leaderboards${q}`)
-    if (which !== 'all') $('season-countdown').textContent = `${seasonName(season)} season`
-    grid.replaceChildren(
-      ...games.map(g =>
-        h(
-          'div',
-          { className: 'board' },
-          h('strong', {}, g.title),
-          g.top.length
-            ? h('ol', {}, g.top.slice(0, 5).map((r, i) => h('li', { className: i < 3 ? 'podium' : '' }, h('span', {}, `${medal(i + 1)} ${r.name}`), h('b', {}, fmt(r.best)))))
-            : h('p', { className: 'muted small' }, 'No scores yet. The top spot is open!'),
-        ),
-      ),
-    )
+    let data = await api(`/api/leaderboards${q}`)
+    if (which !== 'all') $('season-label').textContent = `${seasonName(data.season)} season · ${daysLeft(seasonEnd(data.season))} left`
+    // Nothing this season yet: fall back to all time on first load.
+    if (!boardData && !data.games.some(g => g.top.length)) {
+      const all = await api('/api/leaderboards?season=all')
+      if (!all.games.some(g => g.top.length)) return // nothing anywhere: keep the section hidden
+      data = all
+      for (const t of document.querySelectorAll('#board-tabs .tab')) t.classList.toggle('is-on', t.dataset.season === 'all')
+    }
+    boardData = data
+    $('boards').hidden = false
+    if (!boardGame || !data.games.find(g => g.id === boardGame)?.top.length) boardGame = (data.games.find(g => g.top.length) || data.games[0]).id
+    renderBoard()
   } catch (err) {
-    grid.replaceChildren(h('p', { className: 'error' }, `Leaderboards unavailable (${err.message}).`))
+    $('boards').hidden = false
+    $('board-list').replaceChildren(h('li', { className: 'error' }, `Leaderboard unavailable (${err.message}).`))
   }
 }
 
+function renderBoard() {
+  const games = boardData.games
+  $('board-games').replaceChildren(
+    ...games.map(g => {
+      const b = h('button', { className: `chip${g.id === boardGame ? ' is-on' : ''}${g.top.length ? '' : ' empty'}`, textContent: g.title, role: 'tab' })
+      b.onclick = () => {
+        boardGame = g.id
+        renderBoard()
+      }
+      return b
+    }),
+  )
+  const g = games.find(x => x.id === boardGame)
+  $('board-list').replaceChildren(
+    ...(g.top.length
+      ? g.top.slice(0, 10).map((r, i) => h('li', { className: i < 3 ? `top top-${i + 1}` : '' }, h('span', { className: 'pos' }, i < 3 ? medal(i + 1) : i + 1), h('span', { className: 'who' }, r.name), h('b', {}, fmt(r.best), h('small', {}, ` ${g.unit}`))))
+      : [h('li', { className: 'muted empty-row' }, `No ${g.title} scores yet. The top spot is open.`)]),
+  )
+}
+
 async function loadHall() {
-  const el = $('hall')
   try {
     const { seasons } = await api('/api/hall')
-    if (!seasons.length) {
-      el.replaceChildren(h('p', { className: 'muted' }, 'The first champions will be crowned at the end of this season. Will it be you?'))
-      return
-    }
-    el.replaceChildren(
-      ...seasons.map(s =>
+    if (!seasons.length) return
+    $('hall-section').hidden = false
+    $('hall').replaceChildren(
+      ...seasons.slice(0, 3).map(s =>
         h(
           'div',
           { className: 'hall-season' },
@@ -234,24 +262,21 @@ async function loadHall() {
           h(
             'div',
             { className: 'hall-grid' },
-            s.winners.map(w =>
-              h(
-                'div',
-                { className: `legend rank-${w.rank}` },
-                h('span', { className: 'legend-medal' }, medal(w.rank)),
-                h('strong', {}, w.name),
-                h('span', { className: 'muted small' }, w.title),
-                w.prize ? h('span', { className: 'legend-prize' }, w.prize) : null,
-                w.status === 'shipped' ? h('span', { className: 'shipped' }, 'Prize delivered') : null,
+            s.winners
+              .filter(w => w.rank === 1 || w.game === 'raffle')
+              .map(w =>
+                h(
+                  'div',
+                  { className: 'legend' },
+                  h('span', { className: 'legend-medal' }, w.game === 'raffle' ? '🎁' : '🥇'),
+                  h('div', {}, h('strong', {}, w.name), h('span', { className: 'muted small' }, w.title), w.prize ? h('span', { className: 'legend-prize' }, w.prize + (w.status === 'shipped' ? ' · delivered' : '')) : null),
+                ),
               ),
-            ),
           ),
         ),
       ),
     )
-  } catch (err) {
-    el.replaceChildren(h('p', { className: 'error' }, `Hall of Legends unavailable (${err.message}).`))
-  }
+  } catch {}
 }
 
 // ---------------------------------------------------------------- pay

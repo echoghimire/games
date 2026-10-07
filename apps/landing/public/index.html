@@ -25,11 +25,12 @@
         <img class="hero-logo" src="/logo.svg" alt="" />
         <p class="eyebrow">Browser multiplayer · no install · real prizes</p>
         <h1>Frag your friends<br />in <span class="grad">30 seconds.</span></h1>
-        <p class="lead">Eleven fast games that run in any modern browser: a 4-player deathmatch, space dogfights, a 3D fighter and arcade hits with monthly seasons. Top the leaderboard and KTM Tronix ships you the prize.</p>
+        <p class="lead">Eleven fast multiplayer and arcade games in your browser. Top a monthly leaderboard and KTM Tronix ships you the prize.</p>
         <div class="cta">
           <a class="btn big" href="/play">Join game</a>
           <a class="btn big ghost" href="/signup">Sign up</a>
         </div>
+        <p class="hero-tags muted small">Pay with Fonepay · Phone or desktop · No install</p>
       </section>
 
       <!-- Logged in -->
@@ -41,46 +42,27 @@
           </div>
           <div class="pass-card" id="pass-card"></div>
         </div>
-        <div class="stat-row" id="stat-row"></div>
         <div class="dash-grid">
           <div class="panel drop-panel" id="drop-panel">
-            <p class="eyebrow">Daily supply drop</p>
             <div class="crate" id="crate" aria-hidden="true"><div class="crate-lid"></div><div class="crate-body"></div><div class="crate-glow"></div></div>
-            <p class="drop-result" id="drop-result"></p>
-            <button class="btn big" id="drop-open">Open today's drop</button>
-            <p class="muted small">Free once a day. Every ticket is an entry in this month's merch raffle.</p>
+            <div class="drop-copy">
+              <p class="eyebrow">Daily supply drop</p>
+              <p class="drop-result" id="drop-result">Free crate, once a day. Tickets enter the monthly merch raffle.</p>
+              <button class="btn" id="drop-open">Open today's crate</button>
+            </div>
           </div>
-          <div class="panel">
-            <div class="panel-head"><p class="eyebrow">Your games</p><a class="btn small" href="/play">Play</a></div>
-            <table class="my-games"><thead><tr><th>Game</th><th>Season best</th><th>Season rank</th><th>All-time best</th><th>Rank</th></tr></thead><tbody id="my-games"></tbody></table>
+          <div class="panel stats-panel">
+            <div class="stat-row" id="stat-row"></div>
+            <div class="my-games-wrap">
+              <table class="my-games"><thead><tr><th>Your games</th><th>Season best</th><th>Rank</th><th>All time</th></tr></thead><tbody id="my-games"></tbody></table>
+            </div>
           </div>
         </div>
         <div class="trophies" id="trophies" hidden></div>
       </section>
 
-      <section class="rewards" id="rewards">
-        <div class="section-head"><h2>Rewards &amp; loot</h2><p class="muted" id="season-countdown"></p></div>
-        <div class="reward-grid" id="reward-grid"></div>
-      </section>
-
-      <section class="boards">
-        <div class="section-head">
-          <h2>Leaderboards</h2>
-          <div class="tabs" id="board-tabs">
-            <button class="tab is-on" data-season="current">This season</button>
-            <button class="tab" data-season="all">All time</button>
-          </div>
-        </div>
-        <div class="board-grid" id="board-grid"></div>
-      </section>
-
-      <section class="hall">
-        <div class="section-head"><h2>Hall of Legends</h2><p class="muted">Season champions. KTM Tronix ships every prize.</p></div>
-        <div id="hall"></div>
-      </section>
-
-      <section class="showcase">
-        <h2>Now playing</h2>
+      <section class="showcase" id="showcase">
+        <div class="section-head"><h2>Eleven games, one pass</h2><a class="muted small" href="/play">Browse all →</a></div>
         <div class="showcase-grid">
           <a href="/play"><img src="/covers/deathmatch-cover.jpg" alt="Arena Deathmatch: 1 to 4 players online" loading="lazy" /></a>
           <a href="/play"><img src="/covers/wpilot-cover.jpg" alt="WPilot: space dogfights for up to 8 players" loading="lazy" /></a>
@@ -95,13 +77,40 @@
           <a href="/play"><img src="/covers/maze-cover.jpg" alt="Maze Rush: 3-minute maze race" loading="lazy" /></a>
         </div>
       </section>
-      <section class="features">
-        <div><strong>Monthly seasons</strong><span>Leaderboards reset every month. The top 3 of every game win KTM Tronix prizes.</span></div>
-        <div><strong>Daily supply drops</strong><span>Open a free crate every day for raffle tickets in the monthly merch draw.</span></div>
-        <div><strong>Online rooms</strong><span>Deathmatch, WPilot, Iron Arena, Paint Clash and Curve Clash: share a code and play.</span></div>
-        <div><strong>Pay with Fonepay</strong><span>Scan one QR with any Nepali banking app to get your arena pass.</span></div>
-        <div><strong>Plays anywhere</strong><span>Desktop with mouse aim, or touch controls on phones and tablets.</span></div>
-        <div><strong>Low lag</strong><span>Rooms run on Cloudflare's network, close to every player.</span></div>
+
+      <section class="prizes" id="prizes">
+        <div class="prize-banner">
+          <div class="prize-copy">
+            <p class="eyebrow" id="season-label">Monthly season</p>
+            <h2>Play. Climb. <span class="grad">Win real merch.</span></h2>
+            <p class="muted">Finish the month in the top 3 of any game and KTM Tronix ships you the prize.</p>
+          </div>
+          <ul class="prize-points">
+            <li><span aria-hidden="true">🏆</span><b>Top 3 monthly</b><small>Merch &amp; gear</small></li>
+            <li><span aria-hidden="true">🎁</span><b>Daily crate</b><small>Raffle tickets</small></li>
+            <li><span aria-hidden="true">👑</span><b>Hall of Legends</b><small>Forever</small></li>
+          </ul>
+        </div>
+        <div class="announcements" id="reward-grid"></div>
+      </section>
+
+      <section class="boards" id="boards" hidden>
+        <div class="section-head">
+          <h2>Leaderboard</h2>
+          <div class="tabs" id="board-tabs">
+            <button class="tab is-on" data-season="current">This season</button>
+            <button class="tab" data-season="all">All time</button>
+          </div>
+        </div>
+        <div class="panel board-panel">
+          <div class="game-chips" id="board-games" role="tablist"></div>
+          <ol class="board-list" id="board-list"></ol>
+        </div>
+      </section>
+
+      <section class="hall" id="hall-section" hidden>
+        <div class="section-head"><h2>Hall of Legends</h2><p class="muted small">Season champions. Every prize shipped by KTM Tronix.</p></div>
+        <div id="hall"></div>
       </section>
     </main>
     <footer class="credits">
