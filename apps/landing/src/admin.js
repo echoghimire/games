@@ -4,7 +4,7 @@
 import { describeQr } from '../../../shared/emvqr.js'
 import { GAMES } from '../../../shared/games.js'
 import { seasonOf, SEASON_RE } from '../../../shared/season.js'
-import { fonepayConfigured, passPrice } from './fonepay.js'
+import { fonepayQr, passPrice } from './fonepay.js'
 
 const DAY = 86400
 const now = () => Math.floor(Date.now() / 1000)
@@ -51,18 +51,20 @@ export async function overview(env) {
     ).bind(season),
   ])
 
+  const stored = await fonepayQr(env)
   let qr = null
-  if (fonepayConfigured(env)) {
+  if (stored) {
     try {
-      qr = describeQr(env.FONEPAY_QR.trim())
+      qr = describeQr(stored.payload)
     } catch (err) {
       qr = { error: String(err.message) }
     }
+    Object.assign(qr, { source: stored.source, updatedAt: stored.updatedAt || null, updatedBy: stored.updatedBy || null })
   }
   return {
     season,
     games: GAMES.map(g => ({ id: g.id, title: g.title })),
-    config: { fonepay: fonepayConfigured(env), qr, price: passPrice(env), passDays: Number(env.PASS_DAYS || 30) },
+    config: { fonepay: Boolean(stored), qr, price: passPrice(env), passDays: Number(env.PASS_DAYS || 30) },
     pending: pending.results,
     recent: recent.results,
     rewards: rewards.results,

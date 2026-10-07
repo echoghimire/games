@@ -381,19 +381,149 @@ async function admin(me) {
       $('raffle-result').textContent = `Winner: ${r.winner.name} (${r.winner.tickets} of ${r.winner.of} tickets)`
     })
   }
+  setupQrUpload(act)
   window.mbAdminAct = act
   await refresh()
+}
+
+// ---- payment QR upload: decode in the browser, check, save
+
+const EMV_NAMES = { '59': 'merchant', '60': 'city', '53': 'currency', '54': 'amount', '01': 'type' }
+
+// Browser-side mirror of shared/emvqr.js, for an instant preview.
+function inspectQr(text) {
+  const fields = {}
+  let i = 0
+  while (i < text.length) {
+    const id = text.slice(i, i + 2)
+    const len = Number(text.slice(i + 2, i + 4))
+    if (!/^\d\d$/.test(id) || !Number.isInteger(len) || i + 4 + len > text.length) throw new Error('This QR is not a payment QR (EMVCo format).')
+    fields[id] = text.slice(i + 4, i + 4 + len)
+    i += 4 + len
+  }
+  if (fields['00'] !== '01') throw new Error('This QR is not a payment QR (EMVCo format).')
+  if (!Object.keys(fields).some(k => k >= '26' && k <= '51')) throw new Error('No merchant account in this QR.')
+  let crc = 0xffff
+  const body = text.slice(0, -4)
+  for (const b of new TextEncoder().encode(body)) {
+    crc ^= b << 8
+    for (let k = 0; k < 8; k++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff
+  }
+  const crcOk = body.endsWith('6304') && crc.toString(16).toUpperCase().padStart(4, '0') === text.slice(-4).toUpperCase()
+  return { merchant: fields['59'] || '', city: fields['60'] || '', currency: fields['53'] || '', amount: fields['54'] || '', dynamic: fields['01'] === '12', crcOk }
+}
+
+let jsQRPromise = null
+function loadJsQR() {
+  jsQRPromise ||= new Promise((resolve, reject) => {
+    const s = document.createElement('script')
+    s.src = '/vendor/jsQR.js'
+    s.onload = () => resolve(window.jsQR)
+    s.onerror = () => reject(new Error('Could not load the QR reader.'))
+    document.head.append(s)
+  })
+  return jsQRPromise
+}
+
+async function decodeQrImage(file) {
+  const bitmap = await createImageBitmap(file)
+  if ('BarcodeDetector' in window) {
+    try {
+      const found = await new window.BarcodeDetector({ formats: ['qr_code'] }).detect(bitmap)
+      if (found[0]?.rawValue) return found[0].rawValue
+    } catch {}
+  }
+  const jsQR = await loadJsQR()
+  // Try a few sizes: big photos are slow, tiny QRs in big photos need detail.
+  for (const max of [1200, 2000, 800]) {
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height))
+    const w = Math.round(bitmap.width * scale)
+    const h = Math.round(bitmap.height * scale)
+    const ctx = Object.assign(document.createElement('canvas'), { width: w, height: h }).getContext('2d', { willReadFrequently: true })
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, w, h)
+    ctx.drawImage(bitmap, 0, 0, w, h)
+    const hit = jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'attemptBoth' })
+    if (hit?.data) return hit.data
+  }
+  throw new Error('No QR code found in that picture. Try a sharper, straight-on photo or a screenshot.')
+}
+
+function setupQrUpload(act) {
+  const text = $('qr-text')
+  const check = $('qr-check')
+  const save = $('qr-save')
+  const show = () => {
+    const v = text.value.trim()
+    save.disabled = true
+    check.className = 'small'
+    if (!v) return (check.textContent = '')
+    try {
+      const q = inspectQr(v)
+      const notes = []
+      if (q.currency && q.currency !== '524') notes.push(`currency code ${q.currency} is not NPR (524)`)
+      if (q.dynamic || q.amount) notes.push(`this looks like a one-off payment QR${q.amount ? ` for ${q.amount}` : ''}; use the shop's fixed (static) QR if you can`)
+      if (!q.crcOk) {
+        check.className = 'small error'
+        check.textContent = 'Checksum is wrong — the text was not read or copied exactly.'
+        return
+      }
+      check.className = notes.length ? 'small warn' : 'small ok'
+      check.textContent = `✓ ${q.merchant || 'Merchant'}${q.city ? `, ${q.city}` : ''} · checksum OK` + (notes.length ? ` · Note: ${notes.join('; ')}.` : '')
+      save.disabled = false
+    } catch (err) {
+      check.className = 'small error'
+      check.textContent = err.message
+    }
+  }
+  text.oninput = show
+  $('qr-file').onchange = async e => {
+    const file = e.target.files[0]
+    if (!file) return
+    const prev = $('qr-preview')
+    prev.src = URL.createObjectURL(file)
+    prev.hidden = false
+    check.className = 'small'
+    check.textContent = 'Reading QR…'
+    try {
+      text.value = await decodeQrImage(file)
+    } catch (err) {
+      text.value = ''
+      check.className = 'small error'
+      check.textContent = err.message
+      return
+    }
+    show()
+  }
+  $('qr-form').onsubmit = e => {
+    e.preventDefault()
+    if (!confirm('Players will pay to this merchant account from now on. Save this QR?')) return
+    act('/api/admin/qr', { payload: text.value.trim() }, () => {
+      text.value = ''
+      $('qr-file').value = ''
+      $('qr-preview').hidden = true
+      check.className = 'small ok'
+      check.textContent = 'Saved. New payments use this QR.'
+      save.disabled = true
+    })
+  }
+  $('qr-clear').onclick = () =>
+    confirm('Remove the uploaded QR? Payments will use the FONEPAY_QR secret if one is set, otherwise Fonepay payments turn off.') &&
+    act('/api/admin/qr', { clear: true })
 }
 
 function renderAdmin(o) {
   const act = window.mbAdminAct
   const when = t => (t ? new Date(t * 1000).toLocaleString() : '')
   const qr = o.config.qr
+  const from = qr?.source === 'admin' ? `uploaded${qr.updatedBy ? ` by ${qr.updatedBy}` : ''}${qr.updatedAt ? ` ${when(qr.updatedAt)}` : ''}` : 'from the FONEPAY_QR secret'
   $('cfg').textContent = o.config.fonepay
     ? qr?.error
-      ? `FONEPAY_QR is invalid: ${qr.error}`
+      ? `Payment QR is invalid: ${qr.error}`
       : `Fonepay QR: ${qr.merchantName || 'merchant'} (${qr.crcOk ? 'checksum OK' : 'checksum wrong!'}) · NPR ${o.config.price} for ${o.config.passDays} days`
-    : 'FONEPAY_QR secret is not set'
+    : 'No payment QR yet — upload one above'
+  $('qr-current').textContent = o.config.fonepay ? `In use: ${qr?.merchantName || 'merchant'}, ${from}` : 'Not set — Fonepay payments are off'
+  $('qr-clear').hidden = qr?.source !== 'admin'
 
   $('pending').replaceChildren(
     ...(o.pending.length

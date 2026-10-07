@@ -20,6 +20,24 @@
       <p class="error" id="error" hidden></p>
       <div id="admin" hidden>
         <section class="panel">
+          <div class="panel-head"><h2>Payment QR</h2><span class="muted" id="qr-current"></span></div>
+          <p class="muted small">Upload a photo or screenshot of the KTM Tronix <strong>static</strong> Fonepay QR. It's read in your
+            browser, checked, and used to make the dynamic QR players pay with. You can also paste the decoded text.</p>
+          <form id="qr-form" class="admin-form">
+            <div class="row">
+              <label>QR image<input type="file" id="qr-file" accept="image/*" /></label>
+              <img id="qr-preview" class="qr-preview" alt="" hidden />
+            </div>
+            <label>Decoded text<textarea id="qr-text" name="payload" rows="3" class="mono" placeholder="000201010211..." spellcheck="false"></textarea></label>
+            <p class="small" id="qr-check"></p>
+            <div class="row">
+              <button class="btn" id="qr-save" disabled>Save payment QR</button>
+              <button class="btn ghost" type="button" id="qr-clear" hidden>Remove uploaded QR</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
           <div class="panel-head"><h2>Fonepay payments to check</h2><span class="muted" id="cfg"></span></div>
           <p class="muted small">Match the reference and transaction code with your Fonepay merchant statement, then approve to start the player's pass.</p>
           <table class="admin-table"><thead><tr><th>Player</th><th>Reference</th><th>Amount</th><th>Transaction code</th><th>Submitted</th><th></th></tr></thead><tbody id="pending"></tbody></table>

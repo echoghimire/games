@@ -123,8 +123,11 @@ After pulling this change, apply the new migration once:
 KTM Tronix's **static** Fonepay QR is turned into a **dynamic** QR for every
 purchase (`shared/emvqr.js`, EMVCo merchant-presented QR format):
 
-1. Decode the static QR once (any QR scanner app) and store the text, which starts
-   with `000201`, as the `FONEPAY_QR` secret on the landing Worker.
+1. **Set the QR on `/admin` → Payment QR**: upload a photo or screenshot of the
+   static QR. It's decoded in the browser, the checksum and merchant fields are
+   checked, and it's saved in D1 (`settings` table). Changing it later is just
+   another upload. (Alternatively set the decoded text, which starts with `000201`,
+   as the `FONEPAY_QR` secret; an uploaded QR takes priority over the secret.)
 2. On `/pay` the player clicks **Pay with Fonepay**. The Worker copies the merchant
    fields and sets point-of-initiation `12` (dynamic), field 54 = `PASS_PRICE_NPR`
    (default 500), field 62 = a unique reference like `TRXAB12CD34`, then recomputes
@@ -158,7 +161,7 @@ API is the upgrade path if you want automatic verification later.
     Hall of Legends;
   - **draw the merch raffle**, weighted by tickets;
   - track each winner as `pending` → `contacted` → `shipped` while merch goes out.
-- Tables are in `migrations/0003_rewards_payments.sql`. Both Workers also create any
+- Tables are in `migrations/0003_rewards_payments.sql` and `0004_settings.sql`. Both Workers also create any
   missing table on first request (`shared/schema.js`), so a missed migration
   doesn't take the leaderboards down.
 
@@ -198,10 +201,10 @@ and a test `FONEPAY_QR` in `apps/landing/.dev.vars`.
    openssl rand -base64 48   # use the output for SESSION_SECRET
    npx wrangler secret put SESSION_SECRET -c apps/landing/wrangler.jsonc
    npx wrangler secret put SESSION_SECRET -c apps/arena/wrangler.jsonc
-   npx wrangler secret put FONEPAY_QR -c apps/landing/wrangler.jsonc    # decoded static QR text (000201...)
    npx wrangler secret put ADMIN_EMAILS -c apps/landing/wrangler.jsonc  # e.g. you@example.com,staff@example.com
    ```
-   The pass price is the `PASS_PRICE_NPR` var in `apps/landing/wrangler.jsonc`.
+   After deploying, log in with one of those emails and upload the Fonepay QR on
+   `/admin`. The pass price is the `PASS_PRICE_NPR` var in `apps/landing/wrangler.jsonc`.
 3. **Stripe (optional).** Set `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` and
    `STRIPE_WEBHOOK_SECRET` the same way, then create a webhook endpoint at `https://game.ktmtronix.com/api/stripe/webhook`
    for `checkout.session.completed`, `invoice.paid` and

@@ -1,22 +1,66 @@
 // Arena pass payments by Fonepay QR.
 //
-// FONEPAY_QR (a secret) holds the decoded text of KTM Tronix's static
-// Fonepay QR. For each purchase we turn it into a dynamic EMVCo QR with the
-// pass price and a unique reference (shared/emvqr.js). The player pays with
-// any Fonepay / mobile-banking app, then enters the transaction code from
-// their receipt. KTM Tronix checks it against their Fonepay statement and
+// The decoded text of KTM Tronix's static Fonepay QR comes from /admin (staff
+// upload a photo of the QR and it is stored in the settings table) or, failing
+// that, the FONEPAY_QR secret. For each purchase we turn it into a dynamic EMVCo
+// QR with the pass price and a unique reference (shared/emvqr.js). The player
+// pays with any Fonepay / mobile-banking app, then enters the transaction code
+// from their receipt. KTM Tronix checks it against their Fonepay statement and
 // approves it on /admin, which activates the pass.
 
 import qrcode from 'qrcode-generator'
-import { toDynamicQr } from '../../../shared/emvqr.js'
+import { describeQr, toDynamicQr } from '../../../shared/emvqr.js'
 
 const now = () => Math.floor(Date.now() / 1000)
 const REF_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 const TXN_RE = /^[A-Za-z0-9-]{4,40}$/
 const REUSE_SECONDS = 24 * 3600
 
-export function fonepayConfigured(env) {
-  return Boolean(env.FONEPAY_QR)
+const QR_KEY = 'fonepay_qr'
+
+// { payload, source: 'admin' | 'secret', updatedAt?, updatedBy? } or null.
+export async function fonepayQr(env) {
+  const row = await env.DB.prepare('SELECT value, updated_at, updated_by FROM settings WHERE key = ?1').bind(QR_KEY).first()
+  if (row) return { payload: row.value, source: 'admin', updatedAt: row.updated_at, updatedBy: row.updated_by }
+  if (env.FONEPAY_QR) return { payload: String(env.FONEPAY_QR).trim(), source: 'secret' }
+  return null
+}
+
+export async function fonepayConfigured(env) {
+  return Boolean(await fonepayQr(env))
+}
+
+// Checks a decoded QR before it's saved: it must be a valid EMVCo merchant QR
+// that we can turn into a dynamic one.
+export function checkQr(payload) {
+  const text = String(payload || '').trim()
+  if (!text) return { error: 'No QR text.' }
+  if (text.length > 512) return { error: 'That QR is too long to be a merchant payment QR.' }
+  let info
+  try {
+    info = describeQr(text)
+    toDynamicQr(text, { amount: 1, reference: 'TEST' })
+  } catch (err) {
+    return { error: `Not a Fonepay / EMVCo merchant QR: ${err.message}` }
+  }
+  if (!info.crcOk) return { error: 'The QR checksum is wrong. Re-take the photo or paste the exact text.' }
+  return { payload: text, info }
+}
+
+export async function saveFonepayQr(env, admin, body) {
+  if (body.clear) {
+    await env.DB.prepare('DELETE FROM settings WHERE key = ?1').bind(QR_KEY).run()
+    return { ok: true }
+  }
+  const checked = checkQr(body.payload)
+  if (checked.error) return { error: checked.error, status: 400 }
+  await env.DB.prepare(
+    `INSERT INTO settings (key, value, updated_at, updated_by) VALUES (?1, ?2, ?3, ?4)
+     ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
+  )
+    .bind(QR_KEY, checked.payload, now(), admin.email)
+    .run()
+  return { ok: true, qr: checked.info }
 }
 
 export function passPrice(env) {
@@ -35,9 +79,9 @@ export function qrSvg(text) {
   return qr.createSvgTag({ cellSize: 6, margin: 3, scalable: true })
 }
 
-function view(env, p) {
+function view(qr, env, p) {
   const amount = p.amount
-  const payload = toDynamicQr(env.FONEPAY_QR, { amount, reference: p.reference, purpose: 'Tronix Arena pass' })
+  const payload = toDynamicQr(qr.payload, { amount, reference: p.reference, purpose: 'Tronix Arena pass' })
   return {
     reference: p.reference,
     amount,
@@ -52,14 +96,15 @@ function view(env, p) {
 
 // Returns the player's open payment (reused for a day), or starts one.
 export async function startPayment(env, user) {
-  if (!fonepayConfigured(env)) return { error: 'Fonepay payments are not set up yet.', status: 503 }
+  const qr = await fonepayQr(env)
+  if (!qr) return { error: 'Fonepay payments are not set up yet.', status: 503 }
   const open = await env.DB.prepare(
     `SELECT * FROM payments WHERE user_id = ?1 AND method = 'fonepay' AND status IN ('awaiting', 'submitted')
      ORDER BY created_at DESC LIMIT 1`,
   )
     .bind(user.id)
     .first()
-  if (open && (open.status === 'submitted' || now() - open.created_at < REUSE_SECONDS)) return { payment: view(env, open) }
+  if (open && (open.status === 'submitted' || now() - open.created_at < REUSE_SECONDS)) return { payment: view(qr, env, open) }
 
   const p = {
     id: crypto.randomUUID(),
@@ -67,13 +112,13 @@ export async function startPayment(env, user) {
     amount: passPrice(env).toFixed(2),
     status: 'awaiting',
   }
-  toDynamicQr(env.FONEPAY_QR, { amount: p.amount, reference: p.reference }) // fail before saving if the QR secret is bad
+  toDynamicQr(qr.payload, { amount: p.amount, reference: p.reference }) // fail before saving if the stored QR is bad
   await env.DB.prepare(
     `INSERT INTO payments (id, user_id, reference, method, amount, status, created_at) VALUES (?1, ?2, ?3, 'fonepay', ?4, 'awaiting', ?5)`,
   )
     .bind(p.id, user.id, p.reference, p.amount, now())
     .run()
-  return { payment: view(env, p) }
+  return { payment: view(qr, env, p) }
 }
 
 export async function submitTransaction(env, user, body) {

@@ -16,7 +16,7 @@ import { json, redirect, sameOrigin, withSecurityHeaders } from '../../../shared
 import { createCheckoutSession, verifyWebhook } from '../../../shared/stripe.js'
 import { ensureSchema } from '../../../shared/schema.js'
 import { activeRewards, dashboard, hallOfLegends, leaderboards, openDrop } from './community.js'
-import { fonepayConfigured, latestPayment, passPrice, startPayment, submitTransaction } from './fonepay.js'
+import { fonepayConfigured, latestPayment, passPrice, saveFonepayQr, startPayment, submitTransaction } from './fonepay.js'
 import { deleteReward, drawRaffle, finalizeSeason, isAdmin, overview, reviewPayment, saveReward, updateWinner } from './admin.js'
 import { seasonOf } from '../../../shared/season.js'
 
@@ -69,7 +69,7 @@ async function api(request, env, url) {
     }
     case 'GET /api/pay/options':
       return json({
-        fonepay: fonepayConfigured(env),
+        fonepay: await fonepayConfigured(env),
         stripe: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_ID),
         price: passPrice(env),
         days: Number(env.PASS_DAYS || 30),
@@ -107,6 +107,8 @@ async function api(request, env, url) {
         return result(await finalizeSeason(env, body))
       case 'POST /api/admin/raffle':
         return result(await drawRaffle(env, body))
+      case 'POST /api/admin/qr':
+        return result(await saveFonepayQr(env, user, body))
       case 'POST /api/admin/winner':
         return result(await updateWinner(env, body))
     }

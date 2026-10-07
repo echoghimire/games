@@ -82,6 +82,10 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 @media (max-width: 520px) {
   nav .muted { display: none; }
+  nav { gap: 12px; font-size: 0.9rem; white-space: nowrap; flex-wrap: wrap; justify-content: flex-end; }
+  .bar { padding: 14px 16px; flex-wrap: wrap; }
+  .panel { padding: 18px 16px; }
+  .brand { font-size: 1.05rem; letter-spacing: 0.08em; }
   .cta .btn { flex: 1; }
 }
 .panel .lead { margin: 0; }
@@ -230,5 +234,11 @@ main.admin #admin { display: flex; flex-direction: column; gap: 22px; }
 .admin-form.row, .admin-form .row { display: flex; flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
 .admin-form.row label, .admin-form .row label { flex: 1 1 160px; }
 .admin-form label.check { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 6px; }
+.admin-form textarea { width: 100%; box-sizing: border-box; font: 0.85rem ui-monospace, monospace; padding: 10px; border-radius: 10px; border: 1px solid var(--line, #333); background: rgba(0, 0, 0, 0.3); color: inherit; resize: vertical; word-break: break-all; }
+.admin-form input[type='file'] { min-width: 0; width: 100%; box-sizing: border-box; }
+.qr-preview { flex: 0 0 auto; width: 96px; height: 96px; object-fit: contain; border-radius: 8px; background: #fff; }
+#qr-check.ok { color: #3ddc84; }
+#qr-check.warn { color: var(--accent-2); }
+#qr-check.error { color: var(--danger); }
 textarea, select { background: #0e0e14; border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 10px 12px; font: inherit; }
 details summary { cursor: pointer; color: var(--muted); }
