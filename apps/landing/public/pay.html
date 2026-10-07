@@ -15,15 +15,37 @@
       <a class="brand" href="/"><img class="brand-logo" src="/logo.svg" alt="" />TRONIX<span>ARENA</span></a>
       <nav id="nav"><a href="/login">Log in</a><a class="btn small" href="/signup">Sign up</a></nav>
     </header>
-    <main class="narrow">
+    <main class="narrow wide-pay">
       <h1>Get your arena pass</h1>
       <div class="panel">
-        <p class="lead">Unlimited matches, private rooms, every map pack.</p>
+        <p class="lead">Every game, private rooms, monthly seasons with prizes and the daily supply drop.</p>
+        <p class="price" id="price"></p>
         <p class="notice" id="cancelled" hidden>Checkout was cancelled. No charge was made.</p>
         <p class="error" id="error" hidden></p>
-        <button class="btn big" id="buy">Continue to payment</button>
+
+        <!-- Fonepay QR -->
+        <div id="fonepay" hidden>
+          <button class="btn big" id="fp-start">Pay with Fonepay QR</button>
+          <div class="fp-box" id="fp-box" hidden>
+            <ol class="fp-steps">
+              <li>Open Fonepay or your mobile banking app and <b>scan this QR</b>. The amount and reference are already filled in.</li>
+              <li>Pay <b id="fp-amount"></b>.</li>
+              <li>Enter the <b>transaction code</b> from your payment receipt below.</li>
+            </ol>
+            <div class="fp-qr" id="fp-qr"></div>
+            <p class="muted">Reference <b class="mono" id="fp-ref"></b></p>
+            <form id="fp-form" class="fp-form">
+              <label>Transaction code<input name="txnCode" id="fp-txn" autocomplete="off" spellcheck="false" maxlength="40" required placeholder="e.g. 7R2K9XQ" /></label>
+              <button class="btn">Submit payment</button>
+            </form>
+            <p class="notice" id="fp-status" hidden></p>
+          </div>
+        </div>
+
+        <!-- Stripe (optional) -->
+        <button class="btn big ghost" id="buy" hidden>Pay by card (Stripe)</button>
         <button class="btn ghost" id="dev-grant" hidden>Dev: grant 30 days free</button>
-        <p class="muted">Payments are handled by Stripe. You'll come straight back here.</p>
+        <p class="muted small">Fonepay payments are checked by KTM Tronix, usually within a few hours. Your pass starts as soon as it is approved.</p>
       </div>
     </main>
     <footer class="credits">

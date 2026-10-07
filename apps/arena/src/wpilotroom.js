@@ -9,7 +9,8 @@
 
 import { DurableObject } from 'cloudflare:workers'
 import { WPilotServer } from './wpilot/server.js'
-import { withScoresTable } from './scores.js'
+import { ensureSchema } from '../../../shared/schema.js'
+import { seasonOf } from '../../../shared/season.js'
 
 const MAX_MESSAGES_PER_SECOND = 200
 const MAX_MESSAGE_BYTES = 4 * 1024
@@ -59,17 +60,29 @@ export class WPilotRoom extends DurableObject {
     return new Response(null, { status: 101, webSocket: client })
   }
 
-  // Round wins go on the WPilot leaderboard (one point per round won).
+  // Round wins go on the WPilot leaderboard (one point per round won),
+  // all-time and for the current season.
   recordWins(winners) {
     if (!this.env.DB) return
     const now = Math.floor(Date.now() / 1000)
-    const stmt = this.env.DB.prepare(
+    const season = seasonOf()
+    const allTime = this.env.DB.prepare(
       `INSERT INTO scores (game, user_id, name, best, updated_at) VALUES ('wpilot', ?1, ?2, 1, ?3)
        ON CONFLICT (game, user_id) DO UPDATE SET best = best + 1, name = excluded.name, updated_at = excluded.updated_at`,
     )
-    const writes = winners.filter((w) => w.userId).map((w) => stmt.bind(w.userId, w.name, now))
+    const seasonal = this.env.DB.prepare(
+      `INSERT INTO season_scores (season, game, user_id, name, best, plays, updated_at) VALUES (?1, 'wpilot', ?2, ?3, 1, 1, ?4)
+       ON CONFLICT (season, game, user_id) DO UPDATE SET best = best + 1, plays = plays + 1, name = excluded.name, updated_at = excluded.updated_at`,
+    )
+    const writes = winners
+      .filter((w) => w.userId)
+      .flatMap((w) => [allTime.bind(w.userId, w.name, now), seasonal.bind(season, w.userId, w.name, now)])
     if (writes.length) {
-      this.ctx.waitUntil(withScoresTable(this.env, () => this.env.DB.batch(writes)).catch((err) => console.error(err)))
+      this.ctx.waitUntil(
+        ensureSchema(this.env)
+          .then(() => this.env.DB.batch(writes))
+          .catch((err) => console.error(err)),
+      )
     }
   }
 }

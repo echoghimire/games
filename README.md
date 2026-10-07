@@ -9,7 +9,7 @@ game data, so there are no id Software assets.
 
 | Site | What it does |
 |---|---|
-| `game.ktmtronix.com` | Landing page, sign-up/login, Stripe checkout (`apps/landing`) |
+| `game.ktmtronix.com` | Landing page, sign-up/login, player dashboard, rewards, Hall of Legends, Fonepay QR payments, `/admin` (`apps/landing`) |
 | `arena.ktmtronix.com` | The game. Every request needs a paid session; anyone else is sent to `/login` or `/pay` (`apps/arena`) |
 
 ```
@@ -27,8 +27,9 @@ server to run or pay for.
 ```
 apps/landing/      Worker + static pages for game.<domain>
 apps/arena/        Worker, Room Durable Object, game page, compiled engine
-shared/            session cookies, password hashing, Stripe (used by both Workers)
-migrations/        D1 schema (users, Stripe events)
+shared/            session cookies, password hashing, Stripe, EMVCo QR, game list,
+                   seasons, schema auto-creation (used by both Workers)
+migrations/        D1 schema (users, Stripe events, scores, seasons/rewards/payments)
 engine/            Doom engine source (GPL-2.0), built with ./scripts/build-engine.sh
 games/fighter/     Iron Arena 3D fighter (used with the author's permission), see games/fighter/TRONIX.md
 games/minis/       Arcade games (Tronix Arena originals), see games/minis/README.md
@@ -42,7 +43,10 @@ test/              unit tests (npm test)
 - **Sessions**: an HMAC-signed `arena_session` cookie scoped to `.ktmtronix.com`,
   so logging in on `game.` also logs you in on `arena.`. "Log out everywhere"
   is a single `UPDATE users SET session_version = session_version + 1`.
-- **Payment**: Stripe Checkout. The webhook sets `users.paid_until`.
+- **Payment (main)**: Fonepay QR, see [Fonepay payments](#fonepay-payments) below.
+  An admin approves the transaction code, which sets `users.paid_until`.
+- **Payment (optional)**: Stripe Checkout, shown only if the Stripe secrets are set.
+  The webhook sets `users.paid_until`.
   - `STRIPE_MODE=payment`: a one-time pass that lasts `PASS_DAYS` days.
   - `STRIPE_MODE=subscription`: `invoice.paid` keeps access in step with billing, and
     `customer.subscription.deleted` ends it.
@@ -114,6 +118,50 @@ behind the same paywall, with invite links at `/f/CODE`.
 After pulling this change, apply the new migration once:
 `npm run db:migrate:remote`.
 
+## Fonepay payments
+
+KTM Tronix's **static** Fonepay QR is turned into a **dynamic** QR for every
+purchase (`shared/emvqr.js`, EMVCo merchant-presented QR format):
+
+1. Decode the static QR once (any QR scanner app) and store the text, which starts
+   with `000201`, as the `FONEPAY_QR` secret on the landing Worker.
+2. On `/pay` the player clicks **Pay with Fonepay**. The Worker copies the merchant
+   fields and sets point-of-initiation `12` (dynamic), field 54 = `PASS_PRICE_NPR`
+   (default 500), field 62 = a unique reference like `TRXAB12CD34`, then recomputes
+   the CRC (field 63). The QR image is rendered server-side as SVG.
+3. The player scans and pays with any Fonepay / mobile-banking app, then types the
+   **transaction code** from their receipt. The payment becomes `submitted`. One
+   transaction code can only ever be used once.
+4. Staff open **`/admin`**, check the code and amount against the Fonepay merchant
+   statement, and **Approve** (adds `PASS_DAYS` days of access) or **Reject** with a
+   note the player sees. The `/pay` page polls and sends the player to the arena
+   as soon as it's approved.
+
+**Test with one real payment first.** Whether every banking app honours the amount
+and reference embedded in a modified static QR depends on the app. The manual
+approval step is the safeguard either way. Fonepay's official merchant dynamic-QR
+API is the upgrade path if you want automatic verification later.
+
+## Seasons, rewards and the Hall of Legends
+
+- **Seasons** are calendar months in Nepal time (`YYYY-MM`). Every score also goes
+  into `season_scores`, so the home page shows "This season" and "All time" boards.
+- **Logged-in home page:** pass status, season plays, podiums, per-game best/rank
+  for the season and all time, raffle tickets, and the player's trophies.
+- **Daily supply drop:** pass holders open one free crate a day for raffle tickets
+  (common 1 · rare 3 · epic 6 · legendary 15). Crates are free and can't be bought,
+  so it isn't a paid loot box.
+- **`/admin`** (accounts listed in the `ADMIN_EMAILS` secret):
+  - review Fonepay payments;
+  - post reward announcements (title, prize, optional game/season, image, end date, pin);
+  - **finalize a season**: writes the top N of every game, with prizes, to the
+    Hall of Legends;
+  - **draw the merch raffle**, weighted by tickets;
+  - track each winner as `pending` → `contacted` → `shipped` while merch goes out.
+- Tables are in `migrations/0003_rewards_payments.sql`. Both Workers also create any
+  missing table on first request (`shared/schema.js`), so a missed migration
+  doesn't take the leaderboards down.
+
 ## Local development
 
 Needs Node 20+.
@@ -132,7 +180,9 @@ Sign up at http://localhost:8787/signup. `DEV_MODE=true` shows a
 **"Dev: grant 30 days free"** button on `/pay`, so you can play without Stripe.
 Open a second browser profile to join your own room.
 
-Run `npm test` for the unit tests (auth, sessions, Stripe signatures, room codes).
+Run `npm test` for the unit tests (auth, sessions, Stripe signatures, room codes,
+EMVCo QR, seasons, drop odds). For local `/admin`, put `ADMIN_EMAILS=you@example.com`
+and a test `FONEPAY_QR` in `apps/landing/.dev.vars`.
 
 ## Deploying
 
@@ -148,11 +198,12 @@ Run `npm test` for the unit tests (auth, sessions, Stripe signatures, room codes
    openssl rand -base64 48   # use the output for SESSION_SECRET
    npx wrangler secret put SESSION_SECRET -c apps/landing/wrangler.jsonc
    npx wrangler secret put SESSION_SECRET -c apps/arena/wrangler.jsonc
-   npx wrangler secret put STRIPE_SECRET_KEY -c apps/landing/wrangler.jsonc
-   npx wrangler secret put STRIPE_PRICE_ID -c apps/landing/wrangler.jsonc
-   npx wrangler secret put STRIPE_WEBHOOK_SECRET -c apps/landing/wrangler.jsonc
+   npx wrangler secret put FONEPAY_QR -c apps/landing/wrangler.jsonc    # decoded static QR text (000201...)
+   npx wrangler secret put ADMIN_EMAILS -c apps/landing/wrangler.jsonc  # e.g. you@example.com,staff@example.com
    ```
-3. **Stripe.** Create a webhook endpoint at `https://game.ktmtronix.com/api/stripe/webhook`
+   The pass price is the `PASS_PRICE_NPR` var in `apps/landing/wrangler.jsonc`.
+3. **Stripe (optional).** Set `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` and
+   `STRIPE_WEBHOOK_SECRET` the same way, then create a webhook endpoint at `https://game.ktmtronix.com/api/stripe/webhook`
    for `checkout.session.completed`, `invoice.paid` and
    `customer.subscription.deleted`.
 4. **Deploy:** run `npm run deploy:landing` and `npm run deploy:arena`. Both

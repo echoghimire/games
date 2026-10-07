@@ -3,6 +3,8 @@
   "name": "arena-landing",
   "main": "src/index.js",
   "compatibility_date": "2026-09-01",
+  // SQL files are imported as text (shared/schema.js creates missing tables).
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
   "routes": [{ "pattern": "game.ktmtronix.com", "custom_domain": true }],
   "assets": {
     "directory": "./public",
@@ -25,8 +27,13 @@
     "COOKIE_DOMAIN": "ktmtronix.com",
     // "payment" = one-time pass of PASS_DAYS days, "subscription" = recurring.
     "STRIPE_MODE": "payment",
-    "PASS_DAYS": "30"
+    "PASS_DAYS": "30",
+    // Arena pass price in NPR for Fonepay QR payments.
+    "PASS_PRICE_NPR": "500"
   }
   // Secrets (set with `npx wrangler secret put <NAME> -c apps/landing/wrangler.jsonc`):
-  //   SESSION_SECRET, STRIPE_SECRET_KEY, STRIPE_PRICE_ID, STRIPE_WEBHOOK_SECRET
+  //   SESSION_SECRET
+  //   FONEPAY_QR    - the decoded text of KTM Tronix's static Fonepay QR (starts with 000201)
+  //   ADMIN_EMAILS  - comma-separated emails of staff who can open /admin
+  //   Optional Stripe: STRIPE_SECRET_KEY, STRIPE_PRICE_ID, STRIPE_WEBHOOK_SECRET
 }

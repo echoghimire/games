@@ -4,7 +4,9 @@
 import { currentUser, hasAccess } from '../../../shared/auth.js'
 import { json, redirect, sameOrigin, withSecurityHeaders } from '../../../shared/http.js'
 import { MAX_PLAYERS, ROOM_CODE_RE, newRoomCode } from './room.js'
-import { withScoresTable } from './scores.js'
+import { ensureSchema } from '../../../shared/schema.js'
+import { GAMES, GAME_BY_ID } from '../../../shared/games.js'
+import { seasonOf } from '../../../shared/season.js'
 
 export { Room } from './room.js'
 export { FightRoom } from './fightroom.js'
@@ -18,10 +20,6 @@ const MODES = new Set(['deathmatch', 'altdeath', 'coop'])
 
 // Mini-games with online rooms, and their player limits.
 const PARTY_GAMES = { paint: 4, pong: 2 }
-// Mini-games with leaderboards, and the highest score we accept (sanity cap).
-const SCORE_GAMES = { smash: 100000, flyer: 10000, pong: 1000, paint: 784, coil: 10000000, maze: 200, siege: 10000000, drakonas: 10000000 }
-// Leaderboards the game server keeps itself (WPilot round wins): read-only here.
-const SERVER_SCORED = new Set(['wpilot'])
 // WPilot: one always-open public arena plus private rooms by code.
 const WPILOT_PUBLIC = 'PUBLIC'
 
@@ -142,41 +140,34 @@ async function api(request, env, url, user) {
   // Leaderboards: best score per player per game.
   const sc = url.pathname.match(/^\/api\/scores\/([a-z]+)$/)
   if (sc) {
-    const game = sc[1]
-    const cap = SCORE_GAMES[game]
-    if (!cap && !SERVER_SCORED.has(game)) return json({ error: 'Unknown game' }, 404)
-    if (request.method === 'POST' && !cap) return json({ error: 'Scores for this game come from the game server' }, 403)
+    const game = GAME_BY_ID[sc[1]]
+    if (!game) return json({ error: 'Unknown game' }, 404)
+    if (request.method === 'POST' && game.server) return json({ error: 'Scores for this game come from the game server' }, 403)
+    if (request.method !== 'POST' && request.method !== 'GET') return json({ error: 'Not found' }, 404)
     let body = {}
     if (request.method === 'POST') {
       try {
         body = await request.json()
       } catch {}
     }
-    return withScoresTable(env, async () => {
+    try {
+      await ensureSchema(env)
       if (request.method === 'POST') {
         const score = Number(body.score)
-        if (!Number.isInteger(score) || score < 0 || score > cap) return json({ error: 'Invalid score' }, 400)
-        await env.DB.prepare(
-          `INSERT INTO scores (game, user_id, name, best, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)
-           ON CONFLICT (game, user_id) DO UPDATE SET
-             best = MAX(best, excluded.best), name = excluded.name,
-             updated_at = CASE WHEN excluded.best > best THEN excluded.updated_at ELSE updated_at END`,
-        )
-          .bind(game, user.id, user.display_name, score, Math.floor(Date.now() / 1000))
-          .run()
+        if (!Number.isInteger(score) || score < 0 || score > game.cap) return json({ error: 'Invalid score' }, 400)
+        await recordScore(env, game.id, user, score)
       }
-      if (request.method === 'POST' || request.method === 'GET') return json(await leaderboard(env, game, user))
-      return json({ error: 'Not found' }, 404)
-    }).catch(err => {
+      return json(await leaderboard(env, game.id, user))
+    } catch (err) {
       console.error('scores', err)
       return json({ error: `database error: ${String(err?.message ?? err).slice(0, 160)}` }, 500)
-    })
+    }
   }
 
   // Health check for the live site: is the database reachable, which tables
   // exist, and which games this deployment knows (shows if a deploy is stale).
   if (request.method === 'GET' && url.pathname === '/api/health') {
-    const report = { worker: 'arena', games: Object.keys(SCORE_GAMES).concat([...SERVER_SCORED]), database: {} }
+    const report = { worker: 'arena', games: GAMES.map(g => g.id), season: seasonOf(), database: {} }
     try {
       const tables = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all()
       report.database.tables = tables.results.map(t => t.name)
@@ -257,6 +248,25 @@ async function wad(request, env, url) {
   headers.set('etag', obj.httpEtag)
   headers.set('cache-control', 'private, max-age=31536000, immutable')
   return new Response(obj.body, { headers })
+}
+
+// Best score all-time and for the current season (with a play count).
+async function recordScore(env, game, user, score) {
+  const now = Math.floor(Date.now() / 1000)
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO scores (game, user_id, name, best, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)
+       ON CONFLICT (game, user_id) DO UPDATE SET
+         best = MAX(best, excluded.best), name = excluded.name,
+         updated_at = CASE WHEN excluded.best > best THEN excluded.updated_at ELSE updated_at END`,
+    ).bind(game, user.id, user.display_name, score, now),
+    env.DB.prepare(
+      `INSERT INTO season_scores (season, game, user_id, name, best, plays, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6)
+       ON CONFLICT (season, game, user_id) DO UPDATE SET
+         best = MAX(best, excluded.best), name = excluded.name, plays = plays + 1,
+         updated_at = CASE WHEN excluded.best > best THEN excluded.updated_at ELSE updated_at END`,
+    ).bind(seasonOf(), game, user.id, user.display_name, score, now),
+  ])
 }
 
 async function leaderboard(env, game, user) {

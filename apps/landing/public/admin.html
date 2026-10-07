@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Admin · Tronix Arena</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/landing.css" />
+  </head>
+  <body data-page="admin">
+    <header class="bar">
+      <a class="brand" href="/"><img class="brand-logo" src="/logo.svg" alt="" />TRONIX<span>ARENA</span></a>
+      <nav id="nav"></nav>
+    </header>
+    <main class="admin">
+      <h1>KTM Tronix admin</h1>
+      <p class="error" id="error" hidden></p>
+      <div id="admin" hidden>
+        <section class="panel">
+          <div class="panel-head"><h2>Fonepay payments to check</h2><span class="muted" id="cfg"></span></div>
+          <p class="muted small">Match the reference and transaction code with your Fonepay merchant statement, then approve to start the player's pass.</p>
+          <table class="admin-table"><thead><tr><th>Player</th><th>Reference</th><th>Amount</th><th>Transaction code</th><th>Submitted</th><th></th></tr></thead><tbody id="pending"></tbody></table>
+          <details><summary>Recently reviewed</summary><table class="admin-table"><tbody id="recent"></tbody></table></details>
+        </section>
+
+        <section class="panel">
+          <h2>Reward announcements</h2>
+          <form id="reward-form" class="admin-form">
+            <input type="hidden" name="id" />
+            <label>Title<input name="title" maxlength="120" required placeholder="October season: win a KTM Tronix hoodie" /></label>
+            <label>Text<textarea name="body" rows="3" maxlength="1500" required placeholder="Top 3 of every game this month win..."></textarea></label>
+            <div class="row">
+              <label>Prize<input name="prize" maxlength="120" placeholder="Hoodie + mousepad" /></label>
+              <label>Game<select name="game" id="reward-game"><option value="">All games</option></select></label>
+              <label>Season<input name="season" placeholder="2026-10" maxlength="7" /></label>
+            </div>
+            <div class="row">
+              <label>Image URL (https)<input name="imageUrl" placeholder="https://..." /></label>
+              <label>Show until<input name="endsAt" type="date" /></label>
+              <label class="check"><input type="checkbox" name="pinned" /> Pinned</label>
+            </div>
+            <div class="row"><button class="btn">Save announcement</button><button type="button" class="btn ghost" id="reward-clear">Clear</button></div>
+          </form>
+          <table class="admin-table"><tbody id="rewards"></tbody></table>
+        </section>
+
+        <section class="panel">
+          <h2>Seasons &amp; Hall of Legends</h2>
+          <p class="muted small">Closing a season writes the top places of every game to the Hall of Legends. Then mark each prize as contacted and shipped.</p>
+          <form id="finalize-form" class="admin-form row">
+            <label>Season<input name="season" placeholder="2026-09" maxlength="7" required /></label>
+            <label>Places<input name="places" type="number" min="1" max="10" value="3" /></label>
+            <label>1st prize<input name="p1" placeholder="Mechanical keyboard" /></label>
+            <label>2nd prize<input name="p2" placeholder="Hoodie" /></label>
+            <label>3rd prize<input name="p3" placeholder="T-shirt" /></label>
+            <label class="check"><input type="checkbox" name="force" /> Close early</label>
+            <button class="btn">Close season</button>
+          </form>
+          <table class="admin-table"><thead><tr><th>Season</th><th>Players</th><th>Plays</th><th>Winners</th><th>Raffle</th></tr></thead><tbody id="seasons"></tbody></table>
+          <form id="raffle-form" class="admin-form row">
+            <label>Raffle season<input name="season" placeholder="2026-09" maxlength="7" required /></label>
+            <label>Prize<input name="prize" placeholder="Tronix merch pack" /></label>
+            <button class="btn">Draw raffle winner</button>
+          </form>
+          <p class="notice" id="raffle-result" hidden></p>
+          <h3>Winners</h3>
+          <table class="admin-table"><thead><tr><th>Season</th><th>Game</th><th>#</th><th>Player</th><th>Score</th><th>Prize</th><th>Status</th></tr></thead><tbody id="winners"></tbody></table>
+          <h3>Raffle tickets this season</h3>
+          <table class="admin-table"><tbody id="tickets"></tbody></table>
+        </section>
+      </div>
+    </main>
+    <script src="/landing.js" type="module"></script>
+  </body>
+</html>

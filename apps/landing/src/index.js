@@ -1,4 +1,5 @@
-// game.<domain>: landing page, sign-up/login, and Stripe checkout + webhooks.
+// game.<domain>: landing page, sign-up/login, player dashboard, rewards and
+// Hall of Legends, Fonepay QR payments (Stripe optional) and the /admin tools.
 // Static pages live in ../public and are served by Workers static assets;
 // this Worker only handles /api/* and /play.
 
@@ -13,6 +14,11 @@ import {
 } from '../../../shared/auth.js'
 import { json, redirect, sameOrigin, withSecurityHeaders } from '../../../shared/http.js'
 import { createCheckoutSession, verifyWebhook } from '../../../shared/stripe.js'
+import { ensureSchema } from '../../../shared/schema.js'
+import { activeRewards, dashboard, hallOfLegends, leaderboards, openDrop } from './community.js'
+import { fonepayConfigured, latestPayment, passPrice, startPayment, submitTransaction } from './fonepay.js'
+import { deleteReward, drawRaffle, finalizeSeason, isAdmin, overview, reviewPayment, saveReward, updateWinner } from './admin.js'
+import { seasonOf } from '../../../shared/season.js'
 
 const DAY = 86400
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -45,6 +51,67 @@ async function api(request, env, url) {
   if (route === 'POST /api/stripe/webhook') return stripeWebhook(request, env)
 
   if (request.method !== 'GET' && !sameOrigin(request, env)) return json({ error: 'Bad origin' }, 403)
+  await ensureSchema(env)
+
+  // Public: prizes, leaderboards and the Hall of Legends (also shown to guests).
+  switch (route) {
+    case 'GET /api/rewards':
+      return json({ rewards: await activeRewards(env) })
+    case 'GET /api/hall':
+      return json({ seasons: await hallOfLegends(env) })
+    case 'GET /api/leaderboards': {
+      const season = url.searchParams.get('season') || seasonOf()
+      try {
+        return json({ season, games: await leaderboards(env, season) })
+      } catch {
+        return json({ error: 'Bad season' }, 400)
+      }
+    }
+    case 'GET /api/pay/options':
+      return json({
+        fonepay: fonepayConfigured(env),
+        stripe: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_ID),
+        price: passPrice(env),
+        days: Number(env.PASS_DAYS || 30),
+      })
+  }
+
+  // Logged in.
+  if (route.startsWith('GET /api/dashboard') || route.startsWith('POST /api/drop') || url.pathname.startsWith('/api/pay/fonepay') || route === 'GET /api/pay/status' || url.pathname.startsWith('/api/admin/')) {
+    const user = await currentUser(env, request)
+    if (!user) return json({ error: 'Log in first.' }, 401)
+    switch (route) {
+      case 'GET /api/dashboard':
+        return json(await dashboard(env, user))
+      case 'POST /api/drop':
+        return result(await openDrop(env, user))
+      case 'POST /api/pay/fonepay/start':
+        return result(await startPayment(env, user))
+      case 'POST /api/pay/fonepay/submit':
+        return result(await submitTransaction(env, user, await readJson(request)))
+      case 'GET /api/pay/status':
+        return json({ payment: await latestPayment(env, user), hasAccess: hasAccess(user) })
+    }
+    if (!isAdmin(env, user)) return json({ error: 'Admins only.' }, 403)
+    const body = request.method === 'POST' ? await readJson(request) : {}
+    switch (route) {
+      case 'GET /api/admin/overview':
+        return json(await overview(env))
+      case 'POST /api/admin/payment':
+        return result(await reviewPayment(env, user, body))
+      case 'POST /api/admin/reward':
+        return result(await saveReward(env, body))
+      case 'POST /api/admin/reward/delete':
+        return result(await deleteReward(env, body))
+      case 'POST /api/admin/finalize':
+        return result(await finalizeSeason(env, body))
+      case 'POST /api/admin/raffle':
+        return result(await drawRaffle(env, body))
+      case 'POST /api/admin/winner':
+        return result(await updateWinner(env, body))
+    }
+    return json({ error: 'Not found' }, 404)
+  }
 
   switch (route) {
     case 'GET /api/me':
@@ -64,6 +131,11 @@ async function api(request, env, url) {
   }
 }
 
+// Module helpers return { error, status } for expected failures.
+function result(r) {
+  return r?.error ? json({ error: r.error }, r.status || 400) : json(r)
+}
+
 function publicUser(user) {
   return {
     email: user.email,
@@ -75,7 +147,11 @@ function publicUser(user) {
 
 async function me(request, env) {
   const user = await currentUser(env, request)
-  return json({ user: user ? publicUser(user) : null, arenaUrl: env.ARENA_URL, devMode: env.DEV_MODE === 'true' })
+  return json({
+    user: user ? { ...publicUser(user), isAdmin: isAdmin(env, user) } : null,
+    arenaUrl: env.ARENA_URL,
+    devMode: env.DEV_MODE === 'true',
+  })
 }
 
 async function readJson(request) {

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tronix Arena · Browser multiplayer games</title>
-    <meta name="description" content="Fast, old-school multiplayer shooter that runs in your browser. No install." />
+    <meta name="description" content="Eleven browser games with online rooms, monthly seasons, leaderboards and real prizes from KTM Tronix. No install." />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
@@ -20,32 +20,86 @@
       <nav id="nav"><a href="/login">Log in</a><a class="btn small" href="/signup">Sign up</a></nav>
     </header>
     <main>
-      <section class="hero">
+      <!-- Guests -->
+      <section class="hero" id="hero">
         <img class="hero-logo" src="/logo.svg" alt="" />
-        <p class="eyebrow">Browser multiplayer · no install</p>
+        <p class="eyebrow">Browser multiplayer · no install · real prizes</p>
         <h1>Frag your friends<br />in <span class="grad">30 seconds.</span></h1>
-        <p class="lead">Six fast games that run in any modern browser: a 4-player deathmatch, a 3D fighter, and four addictive arcade games with global leaderboards. Make a room, send a 6-letter code, and you're in.</p>
+        <p class="lead">Eleven fast games that run in any modern browser: a 4-player deathmatch, space dogfights, a 3D fighter and arcade hits with monthly seasons. Top the leaderboard and KTM Tronix ships you the prize.</p>
         <div class="cta">
           <a class="btn big" href="/play">Join game</a>
           <a class="btn big ghost" href="/signup">Sign up</a>
         </div>
       </section>
+
+      <!-- Logged in -->
+      <section class="dash" id="dash" hidden>
+        <div class="dash-head">
+          <div>
+            <p class="eyebrow" id="dash-season"></p>
+            <h1>Welcome back, <span class="grad" id="dash-name"></span></h1>
+          </div>
+          <div class="pass-card" id="pass-card"></div>
+        </div>
+        <div class="stat-row" id="stat-row"></div>
+        <div class="dash-grid">
+          <div class="panel drop-panel" id="drop-panel">
+            <p class="eyebrow">Daily supply drop</p>
+            <div class="crate" id="crate" aria-hidden="true"><div class="crate-lid"></div><div class="crate-body"></div><div class="crate-glow"></div></div>
+            <p class="drop-result" id="drop-result"></p>
+            <button class="btn big" id="drop-open">Open today's drop</button>
+            <p class="muted small">Free once a day. Every ticket is an entry in this month's merch raffle.</p>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><p class="eyebrow">Your games</p><a class="btn small" href="/play">Play</a></div>
+            <table class="my-games"><thead><tr><th>Game</th><th>Season best</th><th>Season rank</th><th>All-time best</th><th>Rank</th></tr></thead><tbody id="my-games"></tbody></table>
+          </div>
+        </div>
+        <div class="trophies" id="trophies" hidden></div>
+      </section>
+
+      <section class="rewards" id="rewards">
+        <div class="section-head"><h2>Rewards &amp; loot</h2><p class="muted" id="season-countdown"></p></div>
+        <div class="reward-grid" id="reward-grid"></div>
+      </section>
+
+      <section class="boards">
+        <div class="section-head">
+          <h2>Leaderboards</h2>
+          <div class="tabs" id="board-tabs">
+            <button class="tab is-on" data-season="current">This season</button>
+            <button class="tab" data-season="all">All time</button>
+          </div>
+        </div>
+        <div class="board-grid" id="board-grid"></div>
+      </section>
+
+      <section class="hall">
+        <div class="section-head"><h2>Hall of Legends</h2><p class="muted">Season champions. KTM Tronix ships every prize.</p></div>
+        <div id="hall"></div>
+      </section>
+
       <section class="showcase">
         <h2>Now playing</h2>
         <div class="showcase-grid">
           <a href="/play"><img src="/covers/deathmatch-cover.jpg" alt="Arena Deathmatch: 1 to 4 players online" loading="lazy" /></a>
+          <a href="/play"><img src="/covers/wpilot-cover.jpg" alt="WPilot: space dogfights for up to 8 players" loading="lazy" /></a>
           <a href="/play"><img src="/covers/fighter-cover.jpg" alt="Iron Arena: 1v1 online 3D fighter" loading="lazy" /></a>
+          <a href="/play"><img src="/covers/drakonas-cover.jpg" alt="Drakonas: 3D shoot-'em-up with bosses" loading="lazy" /></a>
+          <a href="/play"><img src="/covers/siege-cover.jpg" alt="Ghost Siege: tower defense" loading="lazy" /></a>
           <a href="/play"><img src="/covers/paint-cover.jpg" alt="Paint Clash: 2 to 4 players online" loading="lazy" /></a>
           <a href="/play"><img src="/covers/smash-cover.jpg" alt="Tower Smash: one-touch arcade" loading="lazy" /></a>
           <a href="/play"><img src="/covers/pong-cover.jpg" alt="Curve Clash: 3D tunnel pong" loading="lazy" /></a>
           <a href="/play"><img src="/covers/flyer-cover.jpg" alt="Sky Dash: one-tap flyer" loading="lazy" /></a>
+          <a href="/play"><img src="/covers/coil-cover.jpg" alt="Coil: trap them all" loading="lazy" /></a>
+          <a href="/play"><img src="/covers/maze-cover.jpg" alt="Maze Rush: 3-minute maze race" loading="lazy" /></a>
         </div>
       </section>
       <section class="features">
-        <div><strong>Up to 4 players</strong><span>Deathmatch, Deathmatch 2.0 and co-op.</span></div>
-        <div><strong>3D fighter</strong><span>Iron Arena: one-on-one brawls online with a room code.</span></div>
-        <div><strong>Arcade + leaderboards</strong><span>Paint Clash, Tower Smash, Curve Clash and Sky Dash. Beat the world's best score.</span></div>
-        <div><strong>Private rooms</strong><span>Share a code or link. Only your friends get in.</span></div>
+        <div><strong>Monthly seasons</strong><span>Leaderboards reset every month. The top 3 of every game win KTM Tronix prizes.</span></div>
+        <div><strong>Daily supply drops</strong><span>Open a free crate every day for raffle tickets in the monthly merch draw.</span></div>
+        <div><strong>Online rooms</strong><span>Deathmatch, WPilot, Iron Arena, Paint Clash and Curve Clash: share a code and play.</span></div>
+        <div><strong>Pay with Fonepay</strong><span>Scan one QR with any Nepali banking app to get your arena pass.</span></div>
         <div><strong>Plays anywhere</strong><span>Desktop with mouse aim, or touch controls on phones and tablets.</span></div>
         <div><strong>Low lag</strong><span>Rooms run on Cloudflare's network, close to every player.</span></div>
       </section>
