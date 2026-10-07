@@ -1,1 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5a1f"/><stop offset="1" stop-color="#ffb020"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="#0b0b0f"/><path d="M14 16h36v8H36v26h-8V24H14z" fill="url(#g)"/><circle cx="32" cy="50" r="3" fill="#ffb020"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tronix Arena">
+  <defs>
+    <linearGradient id="ta-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd23f"/>
+      <stop offset="0.5" stop-color="#ff7a1a"/>
+      <stop offset="1" stop-color="#ff2e55"/>
+    </linearGradient>
+    <linearGradient id="ta-core" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1626"/>
+      <stop offset="1" stop-color="#0b0b10"/>
+    </linearGradient>
+    <linearGradient id="ta-t" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ffd9a8"/>
+    </linearGradient>
+  </defs>
+  <!-- outer hexagon -->
+  <path d="M32 2 58 17v30L32 62 6 47V17Z" fill="url(#ta-ring)"/>
+  <!-- inner hexagon -->
+  <path d="M32 8.5 52.5 20.3v23.4L32 55.5 11.5 43.7V20.3Z" fill="url(#ta-core)"/>
+  <!-- the T: crossbar + stem with a lightning notch -->
+  <path d="M15.5 16h33l-3.5 7.5H37V31h6.5L29 53.5l3.2-15.5H26V23.5h-7Z" fill="url(#ta-t)"/>
+</svg>

@@ -85,3 +85,33 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .cta .btn { flex: 1; }
 }
 .panel .lead { margin: 0; }
+
+/* ---------- brand ---------- */
+.brand { display: inline-flex; align-items: center; }
+.brand-logo { width: 32px; height: 32px; margin-right: 10px; filter: drop-shadow(0 0 8px rgba(255, 122, 26, 0.55)); }
+.hero { position: relative; }
+.hero-logo {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: min(340px, 34vw);
+  transform: translateY(-50%) rotate(-6deg);
+  filter: drop-shadow(0 0 60px rgba(255, 110, 30, 0.5));
+  animation: hero-float 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hero-float {
+  0%, 100% { transform: translateY(-50%) rotate(-6deg); }
+  50% { transform: translateY(calc(-50% - 12px)) rotate(-3deg); }
+}
+@media (prefers-reduced-motion: reduce) { .hero-logo { animation: none; } }
+@media (max-width: 760px) {
+  .hero-logo { position: static; display: block; width: 120px; transform: none; animation: none; margin-bottom: 18px; }
+}
+.features { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.showcase { margin: 0 0 40px; }
+.showcase h2 { font: 700 0.95rem 'Chakra Petch', sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+.showcase-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px; }
+.showcase-grid a { display: block; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.showcase-grid a:hover { transform: translateY(-6px); box-shadow: 0 18px 44px rgba(0, 0, 0, 0.6), 0 0 0 2px var(--accent), 0 0 38px rgba(255, 90, 31, 0.4); }
+.showcase-grid img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
