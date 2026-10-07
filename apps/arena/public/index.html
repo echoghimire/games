@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Tronix Arena</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/arena.css" />
+  </head>
+  <body>
+    <header class="bar" id="bar">
+      <a class="brand" href="/">TRONIX<span>ARENA</span></a>
+      <div class="who">
+        <span id="who-name"></span>
+        <a id="account-link" href="#">Account</a>
+      </div>
+    </header>
+
+    <main id="screens">
+      <!-- Home -->
+      <section class="screen" id="screen-home" hidden>
+        <h1>Ready up, <span id="home-name"></span>.</h1>
+        <div class="cards">
+          <button class="card" id="go-host">
+            <strong>Host a match</strong>
+            <span>Deathmatch or co-op for up to 4 players. Share a 6-letter code.</span>
+          </button>
+          <form class="card" id="join-form">
+            <strong>Join with a code</strong>
+            <div class="row">
+              <input id="join-code" maxlength="6" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              <button class="btn">Join</button>
+            </div>
+          </form>
+          <button class="card" id="go-solo">
+            <strong>Play solo</strong>
+            <span>The full Freedoom campaign against monsters. Good for warming up.</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Host setup -->
+      <section class="screen" id="screen-host" hidden>
+        <h1>Host a match</h1>
+        <form id="host-form" class="panel">
+          <label>Mode
+            <select name="mode">
+              <option value="deathmatch">Deathmatch</option>
+              <option value="altdeath">Deathmatch 2.0 (items respawn)</option>
+              <option value="coop">Co-op campaign</option>
+            </select>
+          </label>
+          <label>Map pack
+            <select name="wad">
+              <option value="freedm.wad">FreeDM (made for deathmatch)</option>
+              <option value="freedoom2.wad">Freedoom: Phase 2</option>
+              <option value="freedoom1.wad">Freedoom: Phase 1</option>
+            </select>
+          </label>
+          <label>Map <input name="map" type="number" min="1" max="32" value="1" /></label>
+          <label>Players <select name="players"><option>2</option><option>3</option><option selected>4</option></select></label>
+          <label>Skill
+            <select name="skill">
+              <option value="1">1 · Easy</option><option value="2">2</option><option value="3" selected>3 · Normal</option><option value="4">4 · Hard</option><option value="5">5 · Nightmare</option>
+            </select>
+          </label>
+          <label>Time limit (minutes, 0 = none) <input name="timelimit" type="number" min="0" max="60" value="10" /></label>
+          <label class="check"><input name="monsters" type="checkbox" /> Monsters</label>
+          <div class="actions">
+            <button type="button" class="btn ghost" data-back>Back</button>
+            <button class="btn" id="host-submit">Create room</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Join -->
+      <section class="screen" id="screen-join" hidden>
+        <h1>Join room <span class="code" id="join-title"></span></h1>
+        <div class="panel" id="join-info"></div>
+        <div class="actions">
+          <button type="button" class="btn ghost" data-back>Back</button>
+          <button class="btn" id="join-go" disabled>Join match</button>
+        </div>
+      </section>
+
+      <!-- Loading -->
+      <section class="screen" id="screen-loading" hidden>
+        <h1 id="loading-title">Loading</h1>
+        <div class="progress"><div id="progress-bar"></div></div>
+        <p id="loading-text">Preparing…</p>
+      </section>
+
+      <!-- Error / ended -->
+      <section class="screen" id="screen-message" hidden>
+        <h1 id="message-title"></h1>
+        <p id="message-text"></p>
+        <div class="actions"><a class="btn" href="/">Back to the arena</a></div>
+      </section>
+    </main>
+
+    <div id="game" hidden>
+      <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+      <aside id="lobby" hidden>
+        <div class="lobby-head">
+          <span>Room</span>
+          <strong class="code" id="lobby-code"></strong>
+          <button class="btn small" id="copy-link">Copy invite link</button>
+        </div>
+        <ol id="lobby-players"></ol>
+        <p class="hint">The match starts automatically when the room is full, or press <kbd>Space</kbd> in the game window to start now.</p>
+      </aside>
+      <div id="toast" hidden></div>
+      <div class="hud-buttons">
+        <button class="btn small ghost" id="fullscreen">Fullscreen</button>
+      </div>
+      <div id="touch" hidden>
+        <div id="stick"></div>
+        <div class="touch-buttons">
+          <button data-key="Space">FIRE</button>
+          <button data-key="KeyE">USE</button>
+          <button data-key="Enter">MENU OK</button>
+          <button data-key="Escape">MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="credits">
+      Built on <a href="https://github.com/cloudflare/doom-wasm">Chocolate Doom / doom-wasm</a> (GPL-2.0, <a href="https://github.com/echoghimire/games">source</a>)
+      and <a href="https://freedoom.github.io/">Freedoom</a> game data (BSD). <a href="https://game.ktmtronix.com/licenses">Licenses</a>. Not affiliated with id Software.
+    </footer>
+
+    <script src="/vendor/nipplejs-0.10.2.min.js" defer></script>
+    <script src="/arena.js" type="module"></script>
+  </body>
+</html>

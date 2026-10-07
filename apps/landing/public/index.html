@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tronix Arena · Browser deathmatch</title>
+    <meta name="description" content="Fast, old-school multiplayer shooter that runs in your browser. No install." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/landing.css" />
+  </head>
+  <body data-page="home">
+    <header class="bar">
+      <a class="brand" href="/">TRONIX<span>ARENA</span></a>
+      <nav id="nav"><a href="/login">Log in</a><a class="btn small" href="/signup">Sign up</a></nav>
+    </header>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Browser deathmatch · no install</p>
+        <h1>Frag your friends<br />in <span class="grad">30 seconds.</span></h1>
+        <p class="lead">Classic, fast 90s-style shooter that runs in any modern browser. Make a room, send a 6-letter code, and you're in.</p>
+        <div class="cta">
+          <a class="btn big" href="/play">Join game</a>
+          <a class="btn big ghost" href="/signup">Sign up</a>
+        </div>
+      </section>
+      <section class="features">
+        <div><strong>Up to 4 players</strong><span>Deathmatch, Deathmatch 2.0 and co-op.</span></div>
+        <div><strong>Private rooms</strong><span>Share a code or link. Only your friends get in.</span></div>
+        <div><strong>Plays anywhere</strong><span>Desktop with mouse aim, or touch controls on phones and tablets.</span></div>
+        <div><strong>Low lag</strong><span>Rooms run on Cloudflare's network, close to every player.</span></div>
+      </section>
+    </main>
+    <footer class="credits">
+      Built on <a href="https://github.com/cloudflare/doom-wasm">Chocolate Doom / doom-wasm</a> (GPL-2.0, <a href="https://github.com/echoghimire/games">source</a>)
+      and <a href="https://freedoom.github.io/">Freedoom</a> game data (BSD). <a href="/licenses">Licenses</a>. Not affiliated with id Software.
+    </footer>
+    <script src="/landing.js" type="module"></script>
+  </body>
+</html>

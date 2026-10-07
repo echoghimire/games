@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Welcome · Tronix Arena</title>
+    <meta name="description" content="Fast, old-school multiplayer shooter that runs in your browser. No install." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/landing.css" />
+  </head>
+  <body data-page="welcome">
+    <header class="bar">
+      <a class="brand" href="/">TRONIX<span>ARENA</span></a>
+      <nav id="nav"><a href="/login">Log in</a><a class="btn small" href="/signup">Sign up</a></nav>
+    </header>
+    <main class="narrow">
+      <h1 id="welcome-title">Confirming your payment…</h1>
+      <div class="panel">
+        <p id="welcome-text" class="lead">This usually takes a few seconds.</p>
+        <a class="btn big" id="welcome-go" href="/play" hidden>Enter the arena</a>
+      </div>
+    </main>
+    <footer class="credits">
+      Built on <a href="https://github.com/cloudflare/doom-wasm">Chocolate Doom / doom-wasm</a> (GPL-2.0, <a href="https://github.com/echoghimire/games">source</a>)
+      and <a href="https://freedoom.github.io/">Freedoom</a> game data (BSD). <a href="/licenses">Licenses</a>. Not affiliated with id Software.
+    </footer>
+    <script src="/landing.js" type="module"></script>
+  </body>
+</html>

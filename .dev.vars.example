@@ -1,0 +1,11 @@
+# Copy to apps/landing/.dev.vars and apps/arena/.dev.vars for `npm run dev:*`.
+SESSION_SECRET=dev-only-change-me
+LANDING_URL=http://localhost:8787
+ARENA_URL=http://localhost:8788
+COOKIE_DOMAIN=
+COOKIE_INSECURE=true
+DEV_MODE=true
+# Optional, to test real Stripe test-mode checkout locally:
+# STRIPE_SECRET_KEY=sk_test_...
+# STRIPE_PRICE_ID=price_...
+# STRIPE_WEBHOOK_SECRET=whsec_...

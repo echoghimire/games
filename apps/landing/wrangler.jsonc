@@ -1,0 +1,32 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "arena-landing",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "routes": [{ "pattern": "game.ktmtronix.com", "custom_domain": true }],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "drop-trailing-slash",
+    "run_worker_first": ["/api/*", "/play"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ktm-arena",
+      // Replace with the id printed by `npx wrangler d1 create ktm-arena`.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "vars": {
+    "LANDING_URL": "https://game.ktmtronix.com",
+    "ARENA_URL": "https://arena.ktmtronix.com",
+    "COOKIE_DOMAIN": "ktmtronix.com",
+    // "payment" = one-time pass of PASS_DAYS days, "subscription" = recurring.
+    "STRIPE_MODE": "payment",
+    "PASS_DAYS": "30"
+  }
+  // Secrets (set with `npx wrangler secret put <NAME> -c apps/landing/wrangler.jsonc`):
+  //   SESSION_SECRET, STRIPE_SECRET_KEY, STRIPE_PRICE_ID, STRIPE_WEBHOOK_SECRET
+}

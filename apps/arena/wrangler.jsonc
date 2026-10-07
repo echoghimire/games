@@ -1,0 +1,35 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "arena-game",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "routes": [{ "pattern": "arena.ktmtronix.com", "custom_domain": true }],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "drop-trailing-slash",
+    // Every request goes through the Worker first so only paying players get
+    // the game page, engine and WADs.
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ktm-arena",
+      // Same database as the landing Worker.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "WADS", "bucket_name": "ktm-arena-wads" }],
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "vars": {
+    "LANDING_URL": "https://game.ktmtronix.com",
+    "ARENA_URL": "https://arena.ktmtronix.com",
+    "COOKIE_DOMAIN": "ktmtronix.com"
+  }
+  // Secrets: SESSION_SECRET (must match the landing Worker's).
+}

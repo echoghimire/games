@@ -1,0 +1,20 @@
+{
+  "name": "ktm-arena",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:landing": "wrangler dev -c apps/landing/wrangler.jsonc --port 8787 --persist-to .wrangler/state --inspector-port 9230",
+    "dev:arena": "wrangler dev -c apps/arena/wrangler.jsonc --port 8788 --persist-to .wrangler/state --inspector-port 9231",
+    "deploy:landing": "wrangler deploy -c apps/landing/wrangler.jsonc",
+    "deploy:arena": "wrangler deploy -c apps/arena/wrangler.jsonc",
+    "db:migrate:local": "wrangler d1 migrations apply ktm-arena --local -c apps/landing/wrangler.jsonc --persist-to .wrangler/state",
+    "db:migrate:remote": "wrangler d1 migrations apply ktm-arena --remote -c apps/landing/wrangler.jsonc",
+    "build:engine": "./scripts/build-engine.sh",
+    "test": "node --test test/*.test.js",
+    "wads:local": "./scripts/upload-wads.sh --local",
+    "wads:remote": "./scripts/upload-wads.sh"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

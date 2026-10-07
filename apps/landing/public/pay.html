@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Get access · Tronix Arena</title>
+    <meta name="description" content="Fast, old-school multiplayer shooter that runs in your browser. No install." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/landing.css" />
+  </head>
+  <body data-page="pay">
+    <header class="bar">
+      <a class="brand" href="/">TRONIX<span>ARENA</span></a>
+      <nav id="nav"><a href="/login">Log in</a><a class="btn small" href="/signup">Sign up</a></nav>
+    </header>
+    <main class="narrow">
+      <h1>Get your arena pass</h1>
+      <div class="panel">
+        <p class="lead">Unlimited matches, private rooms, every map pack.</p>
+        <p class="notice" id="cancelled" hidden>Checkout was cancelled. No charge was made.</p>
+        <p class="error" id="error" hidden></p>
+        <button class="btn big" id="buy">Continue to payment</button>
+        <button class="btn ghost" id="dev-grant" hidden>Dev: grant 30 days free</button>
+        <p class="muted">Payments are handled by Stripe. You'll come straight back here.</p>
+      </div>
+    </main>
+    <footer class="credits">
+      Built on <a href="https://github.com/cloudflare/doom-wasm">Chocolate Doom / doom-wasm</a> (GPL-2.0, <a href="https://github.com/echoghimire/games">source</a>)
+      and <a href="https://freedoom.github.io/">Freedoom</a> game data (BSD). <a href="/licenses">Licenses</a>. Not affiliated with id Software.
+    </footer>
+    <script src="/landing.js" type="module"></script>
+  </body>
+</html>

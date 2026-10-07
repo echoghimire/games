@@ -1,0 +1,219 @@
+:root {
+  --bg: #0b0b0f;
+  --panel: #15151c;
+  --line: #2a2a35;
+  --text: #ecebf2;
+  --muted: #9a98a8;
+  --accent: #ff5a1f;
+  --accent-2: #ffb020;
+  --danger: #ff4d6d;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; min-height: 100%; }
+
+body {
+  background: radial-gradient(1200px 600px at 70% -10%, #2a1208 0%, transparent 60%), var(--bg);
+  color: var(--text);
+  font: 16px/1.5 Inter, system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+a { color: var(--accent-2); }
+
+h1 {
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  letter-spacing: 0.02em;
+  margin: 0 0 1.5rem;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  text-decoration: none;
+}
+.brand span { color: var(--accent); margin-left: 0.3em; }
+
+.who { display: flex; gap: 16px; align-items: center; color: var(--muted); font-size: 0.9rem; }
+
+main { flex: 1; width: 100%; max-width: 960px; margin: 0 auto; padding: 48px 16px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+
+.card {
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+form.card { cursor: default; }
+form.card:hover { transform: none; }
+.card strong { font-family: 'Chakra Petch', sans-serif; font-size: 1.25rem; }
+.card span { color: var(--muted); }
+
+.row { display: flex; gap: 8px; }
+
+input, select {
+  background: #0e0e14;
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  width: 100%;
+}
+#join-code { text-transform: uppercase; letter-spacing: 0.2em; font-family: 'Chakra Petch', monospace; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.panel label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 0.9rem; }
+.panel label.check { flex-direction: row; align-items: center; gap: 10px; color: var(--text); }
+.panel label.check input { width: auto; }
+
+.kv { display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); padding: 6px 0; }
+.kv span { color: var(--muted); }
+.warn { color: var(--danger); grid-column: 1 / -1; margin: 0; }
+
+.actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; grid-column: 1 / -1; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #160800;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font: 700 1rem 'Chakra Petch', sans-serif;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+.btn.small { padding: 6px 12px; font-size: 0.85rem; }
+
+.code { font-family: 'Chakra Petch', monospace; letter-spacing: 0.18em; color: var(--accent-2); }
+
+.progress { height: 10px; background: #1d1d26; border-radius: 99px; overflow: hidden; }
+#progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.2s; }
+#loading-text { color: var(--muted); }
+
+/* ---------- in game ---------- */
+
+body.playing .bar, body.playing .credits { display: none; }
+
+#game { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; }
+
+/* Keep 4:3 and fill the screen. The canvas must have no border/padding. */
+#canvas {
+  width: min(100vw, calc(100vh * 4 / 3));
+  height: min(100vh, calc(100vw * 3 / 4));
+  image-rendering: pixelated;
+  outline: none;
+  display: block;
+}
+
+#lobby {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: min(320px, calc(100vw - 32px));
+  background: rgba(15, 15, 22, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  backdrop-filter: blur(6px);
+}
+.lobby-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lobby-head span { color: var(--muted); }
+.lobby-head strong { font-size: 1.4rem; }
+#lobby-players { margin: 12px 0; padding-left: 1.2em; }
+.hint { color: var(--muted); font-size: 0.85rem; margin: 0; }
+kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 0.8em; }
+
+#toast {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: rgba(15, 15, 22, 0.92);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 16px;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+
+.hud-buttons { position: absolute; top: 16px; left: 16px; opacity: 0.6; }
+.hud-buttons:hover { opacity: 1; }
+
+#touch { position: absolute; inset: auto 0 0 0; height: 45vh; pointer-events: none; }
+#stick { position: absolute; left: 0; bottom: 0; width: 45vw; height: 100%; pointer-events: auto; }
+.touch-buttons {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  pointer-events: auto;
+}
+.touch-buttons button {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 90, 31, 0.7);
+  background: rgba(255, 90, 31, 0.18);
+  color: #fff;
+  font: 700 0.75rem 'Chakra Petch', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.credits { color: var(--muted); font-size: 0.8rem; text-align: center; padding: 16px; }
+.credits a { color: var(--muted); }
+
+[hidden] { display: none !important; }
+
+@media (max-width: 600px) {
+  main { padding: 28px 16px; }
+  .actions { flex-direction: column-reverse; }
+  .actions .btn { width: 100%; }
+}
