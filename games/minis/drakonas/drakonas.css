@@ -1,7 +1,7 @@
 /* Drakonas extras on top of shared/style.css: hull bar, boss bar, banners, bomb button. */
 
-.dk-mute { pointer-events: auto; cursor: pointer; color: var(--text); font: inherit; font-size: 0.8rem; }
-.dk-mute--off { color: var(--muted); text-decoration: line-through; }
+.dk-mute { pointer-events: auto; cursor: pointer; color: var(--text); display: grid; place-items: center; padding: 4px 9px !important; }
+.dk-mute--off { color: var(--muted); }
 .dk-low { color: #ff5a72; border-color: rgba(255, 90, 114, 0.6); }
 .dk-pop { animation: dk-pop 0.35s ease; }
 @keyframes dk-pop { 40% { transform: scale(1.25); } }
@@ -112,6 +112,10 @@
   .dk-bomb { width: 64px; height: 64px; font-size: 0.7rem; opacity: 0.85; }
 }
 @media (max-width: 520px) {
-  .bar__hud { gap: 6px; font-size: 0.95rem; }
-  .bar__hud .chip { padding: 3px 9px; }
+  .bar { gap: 8px; padding: 8px 10px; }
+  .bar__back span { display: none; }
+  .bar__back { padding: 5px; }
+  .bar__hud { gap: 5px; font-size: 0.88rem; flex-wrap: nowrap; }
+  .bar__hud .chip { padding: 3px 8px; white-space: nowrap; }
+  .dk-boss { top: 52px; }
 }

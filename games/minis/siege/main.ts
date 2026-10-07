@@ -63,8 +63,6 @@ interface Tower {
   cooldown: number;
   yaw: number;
   invested: number;
-  mesh: THREE.Mesh;
-  pad: THREE.Mesh;
   pop: number; // build/upgrade bounce 0..1
   recoil: number;
   side: number; // alternates twin barrels
@@ -115,7 +113,7 @@ interface Splat {
 const TAU = Math.PI * 2;
 const LEVEL_COLORS = [0x22d3ee, 0xffc93c, 0xf472b6];
 const LEVEL_SCALE = [1, 1.1, 1.2];
-const GHOST_YAW = 0; // model faces +z after loading
+const GHOST_YAW = Math.PI / 2; // the ghost model faces -x
 const DEMO_TOWERS: [number, number, TowerKind][] = [
   [3, 4, 'blaster'],
   [5, 6, 'cannon'],
@@ -201,9 +199,11 @@ let ambient = 0;
 // Scene objects that need assets are created in init().
 let ghostMesh: THREE.InstancedMesh;
 let ufoMesh: THREE.InstancedMesh;
-let towerMats: THREE.Material[] = [];
-const padGeos: THREE.BufferGeometry[] = [];
-const padMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+// Towers are instanced per model (3 draw calls), pads share one instanced mesh.
+const towerMeshes: THREE.InstancedMesh[] = [];
+const towerOwners: Tower[][] = [[], [], []];
+let padMesh: THREE.InstancedMesh;
+const MAX_TOWERS = COLS * ROWS;
 let glow: Particles;
 let smoke: Particles;
 let balls: Particles;
@@ -222,8 +222,7 @@ async function init(): Promise<void> {
   board = new Board(assets.grass, renderer.capabilities.getMaxAnisotropy());
   scene.add(board.group);
 
-  towerMats = assets.towerTex.map((map) => new THREE.MeshLambertMaterial({ map }));
-  const ghostMat = new THREE.MeshLambertMaterial({ map: assets.ghostTex, transparent: true, opacity: 0.88, emissive: 0x1d3b4f });
+  const ghostMat = new THREE.MeshLambertMaterial({ map: assets.ghostTex, transparent: true, opacity: 0.9, emissive: 0x2c5a6e });
   ghostMesh = new THREE.InstancedMesh(assets.ghost, ghostMat, 256);
   const ufoMat = new THREE.MeshLambertMaterial({ map: assets.ufoTex, emissive: 0x221a00 });
   ufoMesh = new THREE.InstancedMesh(assets.ufo, ufoMat, 128);
@@ -235,22 +234,29 @@ async function init(): Promise<void> {
     scene.add(m);
   }
 
-  // Tower pads: a dark hex plate with a coloured rim per level (merged, vertex coloured).
-  for (const color of LEVEL_COLORS) {
-    const plate = new THREE.CylinderGeometry(0.44, 0.48, 0.07, 6).toNonIndexed().translate(0, 0.035, 0);
-    const rim = new THREE.TorusGeometry(0.45, 0.025, 6, 6).toNonIndexed().rotateX(Math.PI / 2).rotateY(Math.PI / 6).translate(0, 0.07, 0);
-    const geo = new THREE.BufferGeometry();
-    const parts = [plate, rim];
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(parts.flatMap((p) => [...(p.getAttribute('position').array as Float32Array)]), 3));
-    geo.setAttribute('normal', new THREE.Float32BufferAttribute(parts.flatMap((p) => [...(p.getAttribute('normal').array as Float32Array)]), 3));
-    const c1 = new THREE.Color(0x2a2f3a);
-    const c2 = new THREE.Color(color).multiplyScalar(1.6);
-    const cols: number[] = [];
-    for (let i = 0; i < plate.getAttribute('position').count; i++) cols.push(c1.r, c1.g, c1.b);
-    for (let i = 0; i < rim.getAttribute('position').count; i++) cols.push(c2.r, c2.g, c2.b);
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-    padGeos.push(geo);
+  for (let i = 0; i < 3; i++) {
+    const m = new THREE.InstancedMesh(assets.towers[i]!, new THREE.MeshLambertMaterial({ map: assets.towerTex[i], emissive: 0x262a33 }), MAX_TOWERS);
+    towerMeshes.push(m);
   }
+  // Tower pads: a dark hex plate with a bright rim, tinted per level through the instance colour.
+  const plate = new THREE.CylinderGeometry(0.44, 0.48, 0.07, 6).toNonIndexed().translate(0, 0.035, 0);
+  const rim = new THREE.TorusGeometry(0.45, 0.025, 6, 6).toNonIndexed().rotateX(Math.PI / 2).rotateY(Math.PI / 6).translate(0, 0.07, 0);
+  const padGeo = new THREE.BufferGeometry();
+  const parts = [plate, rim];
+  padGeo.setAttribute('position', new THREE.Float32BufferAttribute(parts.flatMap((p) => [...(p.getAttribute('position').array as Float32Array)]), 3));
+  padGeo.setAttribute('normal', new THREE.Float32BufferAttribute(parts.flatMap((p) => [...(p.getAttribute('normal').array as Float32Array)]), 3));
+  const cols: number[] = [];
+  for (let i = 0; i < plate.getAttribute('position').count; i++) cols.push(0.22, 0.24, 0.3);
+  for (let i = 0; i < rim.getAttribute('position').count; i++) cols.push(1.6, 1.6, 1.6);
+  padGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  padMesh = new THREE.InstancedMesh(padGeo, new THREE.MeshLambertMaterial({ vertexColors: true }), MAX_TOWERS);
+  for (const m of [...towerMeshes, padMesh]) {
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    m.frustumCulled = false;
+    m.count = 0;
+    scene.add(m);
+  }
+  padMesh.setColorAt(0, new THREE.Color());
 
   const glowTex = radialTexture([
     [0, 'rgba(255,255,255,1)'],
@@ -317,7 +323,6 @@ function selectorTexture(): THREE.CanvasTexture {
 // ---------------------------------------------------------------- game flow
 
 function clearField(): void {
-  for (const t of towers.values()) scene.remove(t.mesh, t.pad);
   towers.clear();
   enemies = [];
   shots = [];
@@ -419,13 +424,8 @@ function placeTower(c: number, r: number, kind: TowerKind, free = false): Tower 
   const cost = def.levels[0].cost;
   if (!canBuild(c, r) || (!free && gold < cost)) return null;
   if (!free) gold -= cost;
-  const mesh = new THREE.Mesh(assets!.towers[def.model - 1]!, towerMats[def.model - 1]!);
-  const pad = new THREE.Mesh(padGeos[0]!, padMat);
   const x = cellX(c);
   const z = cellZ(r);
-  mesh.position.set(x, 0.07, z);
-  pad.position.set(x, 0, z);
-  scene.add(pad, mesh);
   const t: Tower = {
     def,
     level: 0,
@@ -436,8 +436,6 @@ function placeTower(c: number, r: number, kind: TowerKind, free = false): Tower 
     cooldown: 0.3,
     yaw: Math.random() * TAU,
     invested: cost,
-    mesh,
-    pad,
     pop: 0,
     recoil: 0,
     side: 1,
@@ -462,7 +460,6 @@ function upgradeTower(t: Tower): boolean {
   t.invested += cost;
   t.level++;
   t.pop = 0.4;
-  t.pad.geometry = padGeos[t.level]!;
   glow.burst(t.x, 0.4, t.z, 24, 2.2, { life: 0.7, size: 0.18, sizeEnd: 0.02, color: LEVEL_COLORS[t.level]!, vy: 1.5 });
   sfx.upgrade();
   return true;
@@ -471,7 +468,6 @@ function upgradeTower(t: Tower): boolean {
 function sellTower(t: Tower): void {
   const refund = Math.floor(t.invested * SELL_REFUND);
   gold += refund;
-  scene.remove(t.mesh, t.pad);
   towers.delete(key(t.col, t.row));
   smoke.burst(t.x, 0.2, t.z, 12, 1.4, { life: 0.9, size: 0.4, sizeEnd: 0.9, color: 0x9a9a9a, alpha: 0.7, drag: 3 });
   const p = toScreen(t.x, 0.6, t.z);
@@ -831,7 +827,7 @@ function draw(): void {
     const mesh = ghostish ? ghostMesh : ufoMesh;
     const i = ghostish ? ng++ : nu++;
     if (i >= mesh.instanceMatrix.count) continue;
-    const scale = e.kind === 'boss' ? 2.3 : e.kind === 'wisp' ? 0.8 : 1;
+    const scale = e.kind === 'boss' ? 2 : e.kind === 'wisp' ? 0.8 : 1;
     if (ghostish) {
       qy.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, e.yaw + GHOST_YAW);
       vPos.set(e.pos.x, e.pos.y - 0.36 * scale, e.pos.z);
@@ -841,7 +837,7 @@ function draw(): void {
     }
     m4.compose(vPos, qy, vScale.setScalar(scale));
     mesh.setMatrixAt(i, m4);
-    tint.setHex(e.kind === 'wisp' ? 0xff9a6b : e.kind === 'boss' ? 0xff8ae0 : 0xffffff);
+    tint.setHex(e.kind === 'wisp' ? 0xff9a6b : e.kind === 'boss' ? 0xff8ae0 : e.kind === 'ghost' ? 0xe6fdff : 0xffffff);
     if (e.flash > 0) tint.multiplyScalar(3);
     mesh.setColorAt(i, tint);
     const sz = e.kind === 'boss' ? 1.8 : e.kind === 'ufo' ? 0.85 : 0.6 * scale;
@@ -864,14 +860,30 @@ function draw(): void {
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }
 
-  // Towers: aim, build bounce, recoil.
+  // Towers: aim, build bounce, recoil; one instanced mesh per model plus the pads.
+  const counts = [0, 0, 0];
+  let np = 0;
   for (const t of towers.values()) {
     const pop = t.pop > 0 ? 1 + Math.sin((t.pop / 0.4) * Math.PI) * 0.18 : 1;
     const k = LEVEL_SCALE[t.level]! * pop;
-    t.mesh.scale.set(k, k * (1 - t.recoil * 0.06), k);
-    t.mesh.rotation.y = t.yaw;
+    const mi = t.def.model - 1;
+    qy.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, t.yaw);
+    m4.compose(vPos.set(t.x, 0.07, t.z), qy, vScale.set(k, k * (1 - t.recoil * 0.06), k));
+    towerOwners[mi]![counts[mi]!] = t;
+    towerMeshes[mi]!.setMatrixAt(counts[mi]!++, m4);
+    qy.identity();
+    m4.compose(vPos.set(t.x, 0, t.z), qy, vScale.setScalar(1));
+    padMesh.setMatrixAt(np, m4);
+    padMesh.setColorAt(np++, tint.setHex(LEVEL_COLORS[t.level]!));
     shadows.ground(t.x, 0.012, t.z, 1.15, 1.15, 0xffffff);
   }
+  towerMeshes.forEach((m, i) => {
+    m.count = counts[i]!;
+    m.instanceMatrix.needsUpdate = true;
+  });
+  padMesh.count = np;
+  padMesh.instanceMatrix.needsUpdate = true;
+  padMesh.instanceColor!.needsUpdate = true;
   shadows.end();
   bars.end();
 
@@ -985,8 +997,9 @@ function cellAt(clientX: number, clientY: number, preferTowers: boolean): { col:
   ndc.set((clientX / innerWidth) * 2 - 1, -(clientY / innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
   if (preferTowers) {
-    const hits = raycaster.intersectObjects([...towers.values()].map((t) => t.mesh), false);
-    const t = hits[0] && [...towers.values()].find((x) => x.mesh === hits[0]!.object);
+    for (const m of towerMeshes) m.computeBoundingSphere();
+    const hit = raycaster.intersectObjects(towerMeshes, false)[0];
+    const t = hit && hit.instanceId !== undefined ? towerOwners[towerMeshes.indexOf(hit.object as THREE.InstancedMesh)]![hit.instanceId] : undefined;
     if (t) return { col: t.col, row: t.row };
   }
   const p = raycaster.ray.intersectPlane(groundPlane, new THREE.Vector3());
@@ -1093,7 +1106,7 @@ function buildSelected(kind: TowerKind): void {
     return;
   }
   t.pop = 0.4;
-  openMenu();
+  closeMenu();
 }
 
 /** Build menu on a free tile, upgrade/sell menu on a tower. Rebuilt on every change. */
@@ -1162,14 +1175,17 @@ function positionMenu(): void {
   if (!selected || menu.hidden) return;
   const docked = innerWidth < 640;
   menu.classList.toggle('sg-menu--dock', docked);
+  const p = toScreen(cellX(selected.col), 0.4, cellZ(selected.row));
   if (docked) {
+    // Docked above the controls, or under the top bar if that would hide the tile.
     menu.style.left = '';
-    menu.style.top = '';
-    menu.style.bottom = `${marginBottom + 6}px`;
+    const h = menu.getBoundingClientRect().height;
+    const low = p.y > innerHeight - marginBottom - h - 30;
+    menu.style.top = low ? `${marginTop + 6}px` : '';
+    menu.style.bottom = low ? '' : `${marginBottom + 6}px`;
     return;
   }
   menu.style.bottom = '';
-  const p = toScreen(cellX(selected.col), 0.4, cellZ(selected.row));
   const r = menu.getBoundingClientRect();
   let left = p.x + 44;
   if (left + r.width > innerWidth - 8) left = p.x - 44 - r.width;
@@ -1245,7 +1261,7 @@ function setHTML(node: HTMLElement, id: string, html: string): void {
 
 function updateHud(): void {
   const play = state === 'play' || state === 'over';
-  controls.hidden = !play;
+  controls.classList.toggle('sg-controls--off', !play); // keep its layout so the camera fit stays put
   setHTML(waveChip, 'wave', `Wave <b>${wave}</b>`);
   setHTML(livesChip, 'lives', `<span class="sg-heart">♥</span> ${lives}`);
   setHTML(goldChip, 'gold', `<span class="sg-gold">◆</span> ${gold}`);
@@ -1332,5 +1348,12 @@ Object.assign(window, {
       return out;
     },
     screen: (c: number, r: number) => toScreen(cellX(c), 0.05, cellZ(r)),
+    /** Length of road (cells) within `range` of a cell, for the autopilot. */
+    coverage: (c: number, r: number, range: number) => {
+      let n = 0;
+      const v = new THREE.Vector3();
+      for (let d = 0; d < board!.length; d += 0.1) if (board!.sample(d, v) && Math.hypot(v.x - cellX(c), v.z - cellZ(r)) <= range) n += 0.1;
+      return n;
+    },
   },
 });

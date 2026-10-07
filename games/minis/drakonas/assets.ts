@@ -44,7 +44,6 @@ function texture(name: string): Promise<THREE.Texture | null> {
       .loadAsync(`${ASSETS}${name}.jpg`)
       .then((t) => {
         t.colorSpace = THREE.SRGBColorSpace;
-        t.anisotropy = 4;
         return t;
       })
       .catch(() => null);
@@ -77,9 +76,20 @@ async function model(obj: string, tex: string, fallback: () => THREE.BufferGeome
   return { geo: geo ?? fallback(), mat, flash };
 }
 
-async function tile(name: string): Promise<Tile> {
+async function tile(name: string, water = false): Promise<Tile> {
   const [geo, map] = await Promise.all([geometry(name), texture(name)]);
   const g = geo ?? new THREE.PlaneGeometry(200, 200).rotateX(-Math.PI / 2).translate(0, 0, -100);
+  // Keep border UVs off the texture edge (and, for the island, inside its water patch)
+  // so mipmapping does not bleed white seams between tiles.
+  const uv = g.attributes.uv as THREE.BufferAttribute | undefined;
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  if (uv) {
+    for (let i = 0; i < uv.count; i++) {
+      const edge = Math.abs(Math.abs(pos.getX(i)) - 100) < 0.5;
+      const [u0, u1, v0, v1] = water && edge ? [0.03, 0.55, 0.45, 0.97] : [0.012, 0.988, 0.012, 0.988];
+      uv.setXY(i, Math.min(u1, Math.max(u0, uv.getX(i))), Math.min(v1, Math.max(v0, uv.getY(i))));
+    }
+  }
   g.translate(0, 0, 100); // tiles are anchored at a corner edge; centre them so they can turn
   return { geo: g, mat: new THREE.MeshLambertMaterial({ map, color: map ? 0xffffff : 0x2d5a27, side: THREE.DoubleSide }) };
 }
@@ -99,7 +109,7 @@ export async function loadAssets(): Promise<Assets> {
     model('missile', 'missile', () => new THREE.CylinderGeometry(0.1, 0.1, 0.8).rotateX(Math.PI / 2)),
   ]);
   const [island, hills, river, swamp] = await Promise.all([
-    tile('tile-island-001'),
+    tile('tile-island-001', true),
     tile('tile-hills-002'),
     tile('tile-river-grass-n-z-001'),
     tile('tile-swamp-001'),

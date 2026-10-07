@@ -5,23 +5,26 @@
  * stage. Stages loop with rising difficulty. Score = kills × combo + bonuses.
  */
 import * as THREE from 'three';
-import { Keys } from '../shared/input';
+import { isTouch, Keys } from '../shared/input';
 import { el, GameUI } from '../shared/ui';
 import { ASSETS, loadAssets, type Assets, type Model } from './assets';
 import { Ground } from './ground';
 import { Sfx } from './sfx';
-import { badgeTex, coinTex, glowTex, orbTex, puffTex, ringTex, shadowTex, SpriteBatch, tracerTex } from './sprites';
+import { badgeTex, bulletTex, cloudTex, coinTex, glowTex, puffTex, ringTex, shadowTex, SpriteBatch, tracerTex } from './sprites';
 import './drakonas.css';
 
 // World: planes fly on the y = 0 plane, screen-up is -z. The ground is far below.
-const FIELD_H = 74; // minimum visible depth of the playfield
-const FIELD_W = 46; // minimum visible width at the bottom edge
-const MAX_HW = 40; // play-area half width cap on wide screens
+const FIELD_H = 60; // minimum visible depth of the playfield
+const FIELD_W = 40; // minimum visible width at the bottom edge
+const MAX_HW = 34; // play-area half width cap on wide screens
 const TILT = 0.36; // camera tilt from straight down (radians)
-const GROUND_Y = -70;
-const SHADOW_Y = GROUND_Y + 17; // just above the hill tops
-const GROUND_SPEED = 26;
-const PLAYER_SPEED = 54;
+const GROUND_Y = -95;
+const GROUND_SCALE = 0.45; // tiles are 200 units; shrink them so the world below feels vast
+const SHADOW_Y = GROUND_Y + 8; // just above the hill tops
+const CLOUD_Y = -38;
+const CLOUD_SPEED = 34; // between the ground and the planes, for parallax
+const GROUND_SPEED = 22;
+const PLAYER_SPEED = 46;
 const DRAG_SPEED = 140;
 const TOUCH_OFFSET = 11; // ship sits this far above the finger
 const PLAYER_R = 1.3;
@@ -142,10 +145,10 @@ const PATHS: Path[] = [
 
 // Lighting per stage, cycling: day, golden hour, dusk, night.
 const SKIES = [
-  { fog: 0x9ccbe8, hemi: 0xdff1ff, ground: 0x3d4b2c, sun: 0xffffff, sunI: 2.3, hemiI: 1.35 },
-  { fog: 0xe6b48a, hemi: 0xffe2c0, ground: 0x4a3a22, sun: 0xffc98a, sunI: 2.4, hemiI: 1.2 },
-  { fog: 0x7a6496, hemi: 0xe0c8ff, ground: 0x2c2440, sun: 0xffa8d8, sunI: 2.0, hemiI: 1.15 },
-  { fog: 0x1c2a4a, hemi: 0x9fb8ff, ground: 0x10182c, sun: 0xb8ccff, sunI: 1.7, hemiI: 1.0 },
+  { fog: 0x9ccbe8, hemi: 0xdff1ff, ground: 0x3d4b2c, sun: 0xffffff, sunI: 2.3, hemiI: 1.35, cloud: [1, 1, 1] },
+  { fog: 0xe6b48a, hemi: 0xffe2c0, ground: 0x4a3a22, sun: 0xffc98a, sunI: 2.4, hemiI: 1.2, cloud: [1, 0.85, 0.7] },
+  { fog: 0x7a6496, hemi: 0xe0c8ff, ground: 0x2c2440, sun: 0xffa8d8, sunI: 2.0, hemiI: 1.15, cloud: [0.85, 0.7, 0.95] },
+  { fog: 0x1c2a4a, hemi: 0x9fb8ff, ground: 0x10182c, sun: 0xb8ccff, sunI: 1.7, hemiI: 1.0, cloud: [0.35, 0.42, 0.6] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -182,6 +185,7 @@ const keys = new Keys();
 const canvas = document.getElementById('c') as HTMLCanvasElement;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: devicePixelRatio < 2, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x9ccbe8, 150, 420);
 scene.background = new THREE.Color(0x9ccbe8);
@@ -196,12 +200,13 @@ scene.add(boom);
 
 const glow = glowTex();
 const shadows = new SpriteBatch(scene, 64, shadowTex(), { additive: false, opacity: 0.32, order: 0 });
+const clouds = new SpriteBatch(scene, 8, cloudTex(), { additive: false, opacity: 0.5, order: 1 });
 const fire = new SpriteBatch(scene, MAX_PARTS, puffTex(), { order: 3 });
 const sparks = new SpriteBatch(scene, MAX_PARTS, glow, { order: 3 });
 const rings = new SpriteBatch(scene, 48, ringTex(), { order: 3 });
 const tracers = new SpriteBatch(scene, 260, tracerTex(), { order: 4 });
 const shotGlow = new SpriteBatch(scene, MAX_SHOTS, glow, { order: 9, top: true });
-const shotCore = new SpriteBatch(scene, MAX_SHOTS, orbTex(), { order: 10, top: true });
+const shotCore = new SpriteBatch(scene, MAX_SHOTS, bulletTex(), { additive: false, order: 10, top: true });
 const coinBatch = new SpriteBatch(scene, 64, coinTex(), { additive: false, order: 6 });
 const badges = new Map<Drop, SpriteBatch>();
 
@@ -220,7 +225,7 @@ const ready = (async () => {
   for (const [k, color, glyph] of looks) badges.set(k, new SpriteBatch(scene, 12, badgeTex(color, glyph), { additive: false, order: 7 }));
   const [assets] = await Promise.all([loadAssets(), sfx.load()]);
   A = assets;
-  ground = new Ground(scene, assets.tiles, GROUND_Y);
+  ground = new Ground(scene, assets.tiles, GROUND_Y, GROUND_SCALE);
   player = new THREE.Mesh(assets.player.geo, assets.player.mat);
   player.scale.setScalar(1.25);
   scene.add(player);
@@ -275,6 +280,7 @@ const hpMul = (): number => 1 + 0.22 * (stage - 1);
 const shotSpeed = (): number => 23 + Math.min(stage - 1, 7) * 2;
 const rand = (a: number, b: number): number => a + Math.random() * (b - a);
 const fieldX = (u: number): number => u * F.hw;
+const cloudPos = Array.from({ length: 5 }, (_, i) => ({ x: rand(-80, 80), z: -160 + i * 60, s: rand(0.8, 1.4) }));
 const fieldZ = (v: number): number => F.top + v * (F.bottom - F.top);
 
 // ---------------------------------------------------------------------------
@@ -287,7 +293,7 @@ function part(kind: Part['kind'], x: number, z: number, vx: number, vz: number, 
 
 function explode(x: number, z: number, size: number, y = 2): void {
   const n = Math.round(6 + size * 6);
-  part(1, x, z, 0, 0, 0.18, size * 9, size * 10, 1, 0.95, 0.8, y + 1); // flash
+  part(1, x, z, 0, 0, 0.16, Math.min(size, 2.2) * 7, 12, 0.9, 0.8, 0.6, y + 1); // flash
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2;
     const s = rand(2, 9) * size;
@@ -300,7 +306,7 @@ function explode(x: number, z: number, size: number, y = 2): void {
   }
   part(2, x, z, 0, 0, 0.45, size * 2, size * 30, 1, 0.7, 0.4, y);
   boom.position.set(x, 12, z);
-  boom.intensity = Math.max(boom.intensity, 60 * size);
+  boom.intensity = Math.min(70, Math.max(boom.intensity, 25 * size));
   shake = Math.min(1.2, shake + 0.12 * size);
   sfx.play('explosion-phaser', Math.min(0.55, 0.18 + 0.1 * size), rand(0.85, 1.2), 0.06);
 }
@@ -403,7 +409,7 @@ function ufo(): void {
 
 function spawnBoss(): void {
   const e = spawn('boss', 0, F.top - 30);
-  e.az = fieldZ(0.24);
+  e.az = fieldZ(0.3);
   e.fire = 2.5;
   boss = e;
   bossPhase = 1;
@@ -728,6 +734,7 @@ function hurt(dmg: number): void {
   if (state !== 'play' || god || invuln > 0) return;
   if (shield > 0) {
     shield = Math.max(0, shield - 2.5);
+    invuln = 0.35;
     part(2, px, pz, 0, 0, 0.3, 4, 30, 0.5, 0.45, 1);
     return;
   }
@@ -927,7 +934,8 @@ function aim(e: PointerEvent): void {
 
 addEventListener('keydown', (e) => {
   if (e.repeat) return;
-  if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyB') bomb();
+  if (paused && (e.code === 'Space' || e.code === 'Enter')) resume();
+  else if (e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyB') bomb();
   else if (e.code === 'KeyM') toggleMute();
   else if ((e.code === 'Escape' || e.code === 'KeyP') && state === 'play') {
     if (paused) resume();
@@ -941,14 +949,21 @@ bombBtn.addEventListener('pointerdown', (e) => {
   bomb();
 });
 
-function toggleMute(): void {
-  sfx.setMuted(!sfx.muted);
-  muteChip.textContent = sfx.muted ? 'Sound off' : 'Sound on';
+const SPEAKER = '<path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/>';
+function showMute(): void {
+  muteChip.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">${SPEAKER}${
+    sfx.muted ? '<path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' : '<path d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>'
+  }</svg>`;
+  muteChip.title = sfx.muted ? 'Sound off (M)' : 'Sound on (M)';
+  muteChip.setAttribute('aria-label', muteChip.title);
   muteChip.classList.toggle('dk-mute--off', sfx.muted);
 }
+function toggleMute(): void {
+  sfx.setMuted(!sfx.muted);
+  showMute();
+}
 muteChip.addEventListener('click', toggleMute);
-muteChip.textContent = sfx.muted ? 'Sound off' : 'Sound on';
-muteChip.classList.toggle('dk-mute--off', sfx.muted);
+showMute();
 
 function pause(): void {
   if (paused || state !== 'play') return;
@@ -962,6 +977,7 @@ function resume(): void {
   if (!paused) return;
   paused = false;
   ui.hide();
+  (document.activeElement as HTMLElement | null)?.blur();
   sfx.resume();
   last = performance.now();
 }
@@ -1003,6 +1019,7 @@ async function start(): Promise<void> {
   if (player) player.visible = true;
   state = 'play';
   ui.hide();
+  (document.activeElement as HTMLElement | null)?.blur(); // so Space can't press a hidden button
   hud.hidden = false;
   bombBtn.hidden = false;
   beginStage();
@@ -1031,6 +1048,14 @@ function applySky(): void {
 function update(dt: number): void {
   t += dt;
   ground?.update(GROUND_SPEED * dt);
+  for (const c of cloudPos) {
+    c.z += CLOUD_SPEED * dt;
+    if (c.z > cloudBottom + 40) {
+      c.z = cloudTop - rand(20, 90);
+      c.x = rand(-1, 1) * (F.hwTop * 1.6 + 20);
+      c.s = rand(0.8, 1.5);
+    }
+  }
   shake = Math.max(0, shake - dt * 2.2);
   boom.intensity *= Math.exp(-dt * 9);
 
@@ -1214,8 +1239,9 @@ function updatePlayer(dt: number): void {
   // Ramming hurts both.
   for (const e of enemies) {
     if (!e.dead && e.t >= 0 && touches(e, px, pz, PLAYER_R)) {
+      const fresh = invuln <= 0; // only the first touch of a collision counts
       hurt(e.kind === 'boss' ? 25 : 20);
-      if (e.kind !== 'boss') damage(e, 10, e.x, e.z);
+      if (fresh && e.kind !== 'boss') damage(e, 12, e.x, e.z);
     }
   }
 }
@@ -1260,6 +1286,11 @@ function draw(): void {
     e.mesh.material = e.flash > 0 ? e.model.flash : e.model.mat;
   }
 
+  clouds.begin();
+  const tint = SKIES[(stage - 1) % SKIES.length]!.cloud;
+  for (const c of cloudPos) clouds.add(c.x, CLOUD_Y, c.z, 70 * c.s, 36 * c.s, 0, tint[0], tint[1], tint[2]);
+  clouds.end();
+
   shadows.begin();
   const showShip = player?.visible && state !== 'dead';
   if (showShip) shadows.add(px + 6, SHADOW_Y, pz + 2, 7, 8);
@@ -1267,7 +1298,7 @@ function draw(): void {
   shadows.end();
 
   tracers.begin();
-  for (const b of bullets) tracers.add(b.x, 1, b.z, 0.9, 4.2, Math.atan2(b.vx, b.vz), 1, 0.85, 0.35);
+  for (const b of bullets) tracers.add(b.x, 1, b.z, 1.2, 5, Math.atan2(b.vx, b.vz), 1, 0.78, 0.3);
   if (showShip && state === 'play') {
     // Engine glow and muzzle flashes.
     const f = 0.8 + Math.random() * 0.4;
@@ -1289,11 +1320,20 @@ function draw(): void {
   const pulseS = 1 + Math.sin(t * 20) * 0.12;
   for (const s of shots) {
     const [r, g, b] = SHOT_COLORS[s.c]!;
-    shotGlow.add(s.x, 3, s.z, 4.2 * pulseS, 4.2 * pulseS, 0, r, g, b);
-    shotCore.add(s.x, 3.1, s.z, 1.5, 1.5, 0, 1, 0.92 + 0.08 * g, 0.92 + 0.08 * b);
+    shotGlow.add(s.x, 3, s.z, 4.6 * pulseS, 4.6 * pulseS, 0, r, g, b);
+    shotCore.add(s.x, 3.1, s.z, 1.9, 1.9, 0, 0.75 + 0.25 * r, 0.75 + 0.25 * g, 0.75 + 0.25 * b);
   }
-  // Mines about to blow get a warning glow.
-  for (const e of enemies) if (e.kind === 'mine' && e.armed > 0 && !e.dead) shotGlow.add(e.x, 2, e.z, 9, 9, 0, 1, 0.1, 0.05);
+  for (const e of enemies) {
+    if (e.dead || e.t < 0) continue;
+    // Mines blink red, brighter once armed; the boss has a pulsing reactor.
+    if (e.kind === 'mine') {
+      const on = e.armed > 0 || Math.floor(t * 3 + e.seed) % 2 === 0;
+      if (on) shotGlow.add(e.x, 2, e.z, e.armed > 0 ? 10 : 4, e.armed > 0 ? 10 : 4, 0, 1, 0.1, 0.05);
+    } else if (e.kind === 'boss') {
+      const k = 0.6 + Math.sin(t * 6) * 0.25 + (bossPhase - 1) * 0.15;
+      shotGlow.add(e.x, 2, e.z + 1, 9 * k + 4, 9 * k + 4, 0, k, 0.15 * k, 0.1 * k);
+    }
+  }
   shotGlow.end();
   shotCore.end();
 
@@ -1334,6 +1374,8 @@ function draw(): void {
   camera.lookAt(camLook.set(camera.position.x - camBase.x, 0, camera.position.z - camBase.z));
 }
 const camBase = new THREE.Vector3();
+let cloudTop = -150;
+let cloudBottom = 80;
 const camLook = new THREE.Vector3();
 
 function updateHud(): void {
@@ -1390,22 +1432,25 @@ function resize(): void {
   F.hwTop = hwTop * k;
   F.hw = Math.min(hwBottom * k - 2.5, MAX_HW);
   const fog = scene.fog as THREE.Fog;
-  fog.near = d + 60;
-  fog.far = d + 330;
-  camera.far = d + 600;
+  fog.near = d + 110;
+  fog.far = d + 420;
+  camera.far = d + 700;
   camera.updateProjectionMatrix();
+  cloudTop = corner(0, 1, CLOUD_Y).z;
+  cloudBottom = corner(0, -1, CLOUD_Y).z;
   if (ground) ground.cover(corner(0, 1, GROUND_Y).z - 60, corner(0, -1, GROUND_Y).z + 40);
   if (state === 'title') pz = fieldZ(0.72);
 }
 addEventListener('resize', resize);
 resize();
 
+let simSteps = 1; // >1 only from the test hook, to fast-forward slow software renderers
 let last = performance.now();
 function frame(now: number): void {
   const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
   if (!paused) {
-    update(dt);
+    for (let i = 0; i < simSteps; i++) update(dt);
     draw();
     updateHud();
     renderer.render(scene, camera);
@@ -1420,7 +1465,9 @@ requestAnimationFrame(frame);
 function controlsHtml(): HTMLElement {
   const d = document.createElement('div');
   d.innerHTML =
-    '<p><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> or drag to fly. Your guns fire on their own. <kbd>Space</kbd>/<kbd>Shift</kbd> drops a <b>bomb</b> that clears every bullet.</p>' +
+    (isTouch()
+      ? '<p><b>Drag</b> anywhere to fly: the ship stays just above your finger and its guns fire on their own. Tap <b>BOMB</b> to clear every bullet on screen.</p>'
+      : '<p><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> or drag the mouse to fly. Your guns fire on their own. <kbd>Space</kbd>/<kbd>Shift</kbd> drops a <b>bomb</b> that clears every bullet. <kbd>P</kbd> pauses.</p>') +
     '<p>Grab <b style="color:#ff9a3c">P</b> spread, <b style="color:#3fd2ff">M</b> missiles, <b style="color:#3fe08a">+</b> repairs, <b style="color:#ff5a72">B</b> bombs and <b style="color:#a99bff">S</b> shields. Chain kills without getting hit for up to <b>×8</b> points.</p>';
   return d;
 }
@@ -1462,5 +1509,10 @@ Object.assign(window, {
     },
     hitBoss: (frac: number) => boss && damage(boss, Math.ceil(boss.max * frac), boss.x, boss.z),
     bomb,
+    setStage: (n: number) => {
+      stage = Math.max(1, Math.floor(n));
+      applySky();
+    },
+    speed: (n: number) => (simSteps = Math.max(1, Math.min(8, Math.round(n)))),
   },
 });

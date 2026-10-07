@@ -26,6 +26,7 @@ export class SpriteBatch {
       opacity: opts.opacity ?? 1,
       blending: opts.additive === false ? THREE.NormalBlending : THREE.AdditiveBlending,
       fog: false,
+      toneMapped: false,
       depthTest: !opts.top, // `top` batches (enemy bullets) always draw over everything
     });
     this.mesh = new THREE.InstancedMesh(quad, material, cap);
@@ -103,16 +104,22 @@ export const glowTex = (): THREE.Texture =>
     g.fillRect(0, 0, 64, 64);
   });
 
-/** Crisp bullet: hard bright disc with a short halo. */
-export const orbTex = (): THREE.Texture =>
+/** Enemy bullet core: white disc with a dark rim so it reads on bright ground too. */
+export const bulletTex = (): THREE.Texture =>
   canvasTexture(64, 64, (g) => {
-    const r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    r.addColorStop(0, 'rgba(255,255,255,1)');
-    r.addColorStop(0.42, 'rgba(255,255,255,1)');
-    r.addColorStop(0.55, 'rgba(255,255,255,0.55)');
-    r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.beginPath();
+    g.arc(32, 32, 27, 0, Math.PI * 2);
+    g.fillStyle = 'rgba(30,0,20,0.75)';
+    g.fill();
+    const r = g.createRadialGradient(32, 32, 0, 32, 32, 22);
+    r.addColorStop(0, '#ffffff');
+    r.addColorStop(0.55, '#ffffff');
+    r.addColorStop(0.8, '#d8d8d8');
+    r.addColorStop(1, '#9a9a9a');
+    g.beginPath();
+    g.arc(32, 32, 22, 0, Math.PI * 2);
     g.fillStyle = r;
-    g.fillRect(0, 0, 64, 64);
+    g.fill();
   });
 
 /** Lumpy fire puff for explosions. */
@@ -158,6 +165,28 @@ export const tracerTex = (): THREE.Texture =>
     r.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = r;
     g.fillRect(-16, -16, 32, 32);
+  });
+
+/** Soft cumulus cloud from a cluster of overlapping puffs. */
+export const cloudTex = (): THREE.Texture =>
+  canvasTexture(256, 128, (g) => {
+    const blobs = [
+      [70, 74, 44],
+      [120, 58, 52],
+      [176, 72, 42],
+      [100, 86, 36],
+      [150, 88, 38],
+      [210, 84, 28],
+      [42, 86, 26],
+    ];
+    for (const [x, y, r] of blobs) {
+      const grad = g.createRadialGradient(x!, y!, 0, x!, y!, r!);
+      grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+      grad.addColorStop(0.6, 'rgba(255,255,255,0.6)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 256, 128);
+    }
   });
 
 /** Dark blob for fake shadows on the ground. */

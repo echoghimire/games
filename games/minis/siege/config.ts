@@ -100,9 +100,9 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   boss: { hp: 1100, speed: 0.55, bounty: 80, points: 400, lives: 5, height: 0.85, radius: 0.8 },
 };
 
-/** Enemy HP grows ~13% a wave (plus a little), so the siege always wins in the end. */
-export const hpScale = (wave: number): number => Math.pow(1.13, wave - 1) * (1 + (wave - 1) * 0.02);
-export const bountyScale = (wave: number): number => 1 + (wave - 1) * 0.05;
+/** Enemy HP grows ~15% a wave (plus a little), so the siege always wins in the end. */
+export const hpScale = (wave: number): number => Math.pow(1.15, wave - 1) * (1 + (wave - 1) * 0.02);
+export const bountyScale = (wave: number): number => 1 + (wave - 1) * 0.03;
 export const pointScale = (wave: number): number => 1 + (wave - 1) * 0.1;
 export const clearBonus = (wave: number): number => 20 + wave * 4;
 /** Seconds between the end of one wave's spawning and the next wave. */

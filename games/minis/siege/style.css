@@ -27,6 +27,8 @@ body { background: radial-gradient(ellipse at 50% 45%, #1c2540 0%, #0c1020 55%, 
   pointer-events: none;
 }
 .sg-controls > * { pointer-events: auto; }
+.sg-controls--off { visibility: hidden; }
+.sg-controls--off > * { pointer-events: none; }
 .sg-info {
   font-size: 0.85rem;
   color: var(--muted);
@@ -94,7 +96,13 @@ body { background: radial-gradient(ellipse at 50% 45%, #1c2540 0%, #0c1020 55%, 
   animation: sg-menu-in 0.14s ease-out;
 }
 @keyframes sg-menu-in { from { opacity: 0; transform: scale(0.94); } }
-.sg-menu--dock { left: 50% !important; transform: translateX(-50%); width: min(420px, calc(100vw - 20px)); animation: none; }
+.sg-menu--dock { left: 50% !important; transform: translateX(-50%); width: min(420px, calc(100vw - 20px)); animation: none; grid-template-columns: repeat(3, 1fr); padding: 8px; }
+.sg-menu--dock .sg-menu__title, .sg-menu--dock .sg-stats, .sg-menu--dock .sg-menu__row { grid-column: 1 / -1; }
+.sg-menu--dock .sg-opt { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 2px; padding: 6px 4px; }
+.sg-menu--dock .sg-opt img { width: 40px; height: 40px; }
+.sg-menu--dock .sg-opt__name small { display: none; }
+.sg-menu--dock .sg-stats { grid-template-columns: repeat(2, auto 1fr); gap: 2px 10px; font-size: 0.8rem; }
+.sg-menu--dock .sg-act { padding: 7px 6px; }
 .sg-menu__title { font: 700 0.85rem 'Chakra Petch', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-2); padding: 2px 4px 4px; }
 .sg-lv { font-size: 0.75rem; letter-spacing: 0.1em; padding: 1px 8px; border-radius: 999px; margin-left: 6px; color: #06121a; }
 .sg-lv--0 { background: #22d3ee; }
@@ -155,10 +163,11 @@ body { background: radial-gradient(ellipse at 50% 45%, #1c2540 0%, #0c1020 55%, 
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease, transform 0.3s ease;
-  white-space: nowrap;
+  width: max-content;
+  max-width: calc(100vw - 24px);
 }
 .sg-banner--on { opacity: 1; transform: translate(-50%, 0); }
-.sg-banner__title { font: 700 clamp(2rem, 7vw, 3.4rem)/1 'Chakra Petch', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; text-shadow: 0 0 24px rgba(168, 85, 247, 0.8), 0 3px 8px #000; }
+.sg-banner__title { font: 700 clamp(1.5rem, 6vw, 2.8rem)/1 'Chakra Petch', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; text-shadow: 0 0 24px rgba(168, 85, 247, 0.8), 0 3px 8px #000; }
 .sg-banner__sub { margin-top: 6px; font: 600 1rem Inter, sans-serif; color: #e9d5ff; text-shadow: 0 2px 6px #000; }
 .sg-banner--good .sg-banner__title { text-shadow: 0 0 24px rgba(57, 255, 136, 0.7), 0 3px 8px #000; }
 .sg-banner--good .sg-banner__sub { color: var(--accent-2); }

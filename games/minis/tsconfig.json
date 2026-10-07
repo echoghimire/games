@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["shared", "smash", "flyer", "pong", "paint"]
+  "include": ["shared", "smash", "flyer", "pong", "paint", "siege", "drakonas"]
 }

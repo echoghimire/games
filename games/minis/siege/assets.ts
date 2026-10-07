@@ -1,5 +1,5 @@
 /**
- * Loads the tower and enemy models (OBJ, z-up, no normals) and textures from
+ * Loads the tower and enemy models (OBJ, y-up, no normals) and textures from
  * /play/siege-assets/ (MIT, Mathieu "Casmo", github.com/Casmo/tower-defense).
  */
 import * as THREE from 'three';
@@ -57,7 +57,6 @@ async function model(name: string, fit: { width?: number; height?: number }): Pr
     parts.push(g);
   });
   let geo = parts.length > 1 ? mergeGeometries(parts)! : parts[0]!;
-  geo.rotateX(-Math.PI / 2); // the models are z-up
   geo = toCreasedNormals(geo, 0.6);
   geo.computeBoundingBox();
   const box = geo.boundingBox!;

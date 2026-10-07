@@ -1,5 +1,5 @@
 /**
- * Endless ground far below the planes: rows of three 200×200 Drakonas tiles
+ * Endless ground far below the planes: rows of five 200×200 Drakonas tiles
  * that scroll toward the camera and are recycled at the top. Sea and land
  * come in stretches of a few rows, with a sandy strip where they meet.
  */
@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { Assets, Tile } from './assets';
 
 export const TILE = 200;
-const COLS = 3;
+const COLS = 5;
 
 interface Row {
   z: number;
@@ -30,18 +30,26 @@ export class Ground {
     scene: THREE.Scene,
     private readonly tiles: Assets['tiles'],
     readonly y: number,
+    private readonly scale: number,
   ) {
     this.group.position.y = y;
+    this.group.scale.setScalar(scale);
+    // Dark underlay so cracks between tiles of different heights never show the sky.
+    const under = new THREE.Mesh(new THREE.PlaneGeometry(TILE * (COLS + 2), TILE * 12).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0x24452a }));
+    under.position.y = -2.5;
+    this.group.add(under);
     scene.add(this.group);
   }
 
-  /** Make sure rows cover z ∈ [top, bottom] (ground-plane coordinates). */
+  /** Make sure rows cover world z ∈ [top, bottom] on the ground plane. */
   cover(top: number, bottom: number): void {
+    top /= this.scale;
+    bottom /= this.scale;
     const need = Math.ceil((bottom - top) / TILE) + 2;
     while (this.rows.length < need) {
       const tiles = Array.from({ length: COLS }, (_, c) => {
         const m = new THREE.Mesh(this.tiles.water.geo, this.tiles.water.mat);
-        m.position.x = (c - 1) * TILE;
+        m.position.x = (c - (COLS - 1) / 2) * TILE;
         this.group.add(m);
         return m;
       });
@@ -61,7 +69,9 @@ export class Ground {
     return this.rows.reduce((a, r) => (r.z < a.z ? r : a));
   }
 
+  /** Scroll by `dz` world units. */
   update(dz: number): void {
+    dz /= this.scale;
     for (const r of this.rows) r.z += dz;
     for (const r of this.rows) {
       if (r.z - TILE / 2 > this.bottom) {
@@ -91,7 +101,7 @@ export class Ground {
     const T = this.tiles;
     const river = row.land && --this.riverIn <= 0;
     if (river) this.riverIn = 2 + Math.floor(Math.random() * 3);
-    for (const m of row.tiles) {
+    row.tiles.forEach((m, col) => {
       let t: Tile;
       let turn = Math.floor(Math.random() * 4);
       if (river) {
@@ -102,7 +112,8 @@ export class Ground {
       m.geometry = t.geo;
       m.material = t.mat;
       m.rotation.y = (turn * Math.PI) / 2;
-      m.scale.x = !river && Math.random() < 0.5 ? -1 : 1;
-    }
+      // The river's two ends sit at different depths: mirror every other tile so they meet.
+      m.scale.x = river ? (col % 2 ? -1 : 1) : Math.random() < 0.5 ? -1 : 1;
+    });
   }
 }
