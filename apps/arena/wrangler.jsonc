@@ -17,7 +17,7 @@
       "binding": "DB",
       "database_name": "ktm-arena",
       // Same database as the landing Worker.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "4d9760b1-221d-496f-bdfb-879150db80a0",
       "migrations_dir": "../../migrations"
     }
   ],
