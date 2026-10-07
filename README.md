@@ -57,6 +57,9 @@ test/              unit tests (npm test)
   `int` everywhere (`src/doomtype.h`).
 - **Fixed two players getting the same network ID** when they joined in the same
   second (the ID came from `srand(time)`). The page now passes a random `-uid`.
+- **Easier respawning:** dead players now respawn with Fire as well as Use (E), and
+  an on-screen hint tells them so. Vanilla Doom only accepts Use, which new players
+  rarely find.
 - **Hardened the WebSocket handler:** it no longer leaks a packet when the receive
   queue is full, and it ignores malformed frames.
 - **Faster, smaller build:** current Emscripten, `SAFE_HEAP` debug checks removed,

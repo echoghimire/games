@@ -217,6 +217,24 @@ void P_DeathThink (player_t* player)
 	player->damagecount--;
 	
 
+    // Tronix Arena: in multiplayer, Fire also respawns (vanilla only accepts
+    // Use, which new players never find). Fire must be pressed again after
+    // death, so a player who dies holding the trigger isn't instantly
+    // respawned. Every client runs this same code, so it stays in sync.
+    if (netgame)
+    {
+	if (onground && player->viewheight == 6*FRACUNIT)
+	    player->message = "PRESS FIRE OR USE (E) TO RESPAWN";
+
+	if (player->cmd.buttons & BT_ATTACK)
+	{
+	    if (!player->attackdown)
+		player->playerstate = PST_REBORN;
+	}
+	else
+	    player->attackdown = false;
+    }
+
     if (player->cmd.buttons & BT_USE)
 	player->playerstate = PST_REBORN;
 }

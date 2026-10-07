@@ -10,6 +10,8 @@ This is a modified copy of Cloudflare's [doom-wasm](https://github.com/cloudflar
 - `src/d_loop.c`: clients take their network id from `-uid` (random, from the page)
   instead of `srand(time)`, and never use the reserved ids 0 and 1.
 - `src/net_websockets.c`: free dropped packets, ignore malformed frames.
+- `src/doom/p_user.c`: in multiplayer, Fire also respawns a dead player (a fresh press,
+  not the held trigger) and a "PRESS FIRE OR USE (E) TO RESPAWN" hint is shown.
 - `configure.ac`: modern Emscripten flags (no SAFE_HEAP, memory growth, INVOKE_RUN=0),
   rebranded package name.
 
