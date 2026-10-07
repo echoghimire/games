@@ -167,7 +167,30 @@ async function api(request, env, url, user) {
       }
       if (request.method === 'POST' || request.method === 'GET') return json(await leaderboard(env, game, user))
       return json({ error: 'Not found' }, 404)
+    }).catch(err => {
+      console.error('scores', err)
+      return json({ error: `database error: ${String(err?.message ?? err).slice(0, 160)}` }, 500)
     })
+  }
+
+  // Health check for the live site: is the database reachable, which tables
+  // exist, and which games this deployment knows (shows if a deploy is stale).
+  if (request.method === 'GET' && url.pathname === '/api/health') {
+    const report = { worker: 'arena', games: Object.keys(SCORE_GAMES).concat([...SERVER_SCORED]), database: {} }
+    try {
+      const tables = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all()
+      report.database.tables = tables.results.map(t => t.name)
+      if (report.database.tables.includes('scores')) {
+        const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM scores').first()
+        report.database.scoreRows = n.n
+      }
+      report.database.ok = true
+    } catch (err) {
+      report.database.ok = false
+      report.database.error = String(err?.message ?? err)
+    }
+    report.durableObjects = { ROOMS: !!env.ROOMS, FIGHTS: !!env.FIGHTS, PARTIES: !!env.PARTIES, WPILOT: !!env.WPILOT }
+    return json(report)
   }
 
   // WPilot rooms run the game server in a Durable Object (wpilotroom.js).

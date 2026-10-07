@@ -93,7 +93,7 @@
           return r.json();
         })
         .then(function (b) {
-          st.textContent = b.me ? 'Your best: ' + b.me.best + ' · Rank #' + b.me.rank : 'Could not save your score.';
+          st.textContent = b.me ? 'Your best: ' + b.me.best + ' · Rank #' + b.me.rank : 'Could not save your score (' + (b.error || 'unknown error') + ').';
           (b.top || []).slice(0, 5).forEach(function (row, i) {
             var li = el('li');
             li.appendChild(el('span', '', '#' + (i + 1) + ' ' + row.name));

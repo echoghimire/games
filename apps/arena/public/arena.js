@@ -199,6 +199,7 @@ function showMini(id) {
     .then(r => r.json())
     .then(b => {
       list.innerHTML = ''
+      if (b.error) throw new Error(b.error)
       if (!b.top?.length) list.innerHTML = '<li class="muted">No scores yet. Be the first!</li>'
       for (const [i, row] of (b.top || []).slice(0, 5).entries()) {
         const li = document.createElement('li')
@@ -207,7 +208,13 @@ function showMini(id) {
         list.append(li)
       }
     })
-    .catch(() => (list.innerHTML = ''))
+    .catch(err => {
+      list.innerHTML = ''
+      const li = document.createElement('li')
+      li.className = 'muted'
+      li.textContent = `Leaderboard unavailable (${err.message || 'network error'}).`
+      list.append(li)
+    })
   show('screen-game-mini')
 }
 

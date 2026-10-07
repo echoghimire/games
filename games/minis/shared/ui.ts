@@ -81,8 +81,8 @@ export class GameUI {
     try {
       const board = await submitScore(this.gameId, score);
       renderBoard(board, stats, list, this.me?.name);
-    } catch {
-      stats.textContent = 'Could not save your score.';
+    } catch (err) {
+      stats.textContent = `Could not save your score (${errorText(err)}).`;
     }
   }
 
@@ -91,10 +91,14 @@ export class GameUI {
     const list = el('ol', 'board', target);
     try {
       renderBoard(await getBoard(this.gameId), stats, list, this.me?.name);
-    } catch {
-      stats.textContent = '';
+    } catch (err) {
+      stats.textContent = `Leaderboard unavailable (${errorText(err)}).`;
     }
   }
+}
+
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : 'network error';
 }
 
 export interface Button {
