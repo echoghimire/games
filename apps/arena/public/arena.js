@@ -89,6 +89,47 @@ const GAME_PAGES = { deathmatch: 'screen-game-deathmatch', fighter: 'screen-game
 
 // Arcade mini-games (games/minis), served at /play/<id>/.
 const MINI_GAMES = {
+  wpilot: {
+    title: 'WPilot',
+    facts: [['2–8', 'Players'], ['Online', 'Public + private rooms'], ['Shooter', 'Genre']],
+    play: 'Jump into the public arena, or create a private room and share the code.',
+    online: true,
+    about: 'Fast 2D space dogfights in the style of the classic XPilot. Thrust, turn, shoot and shield. Grab power-ups for spread shots, rapid fire and ricochets. Everyone presses R when ready; first to 10 kills wins the round, then the map changes. Round wins go on the leaderboard.',
+    keys: [['Turn', '<kbd>←</kbd> <kbd>→</kbd>'], ['Thrust', '<kbd>↑</kbd>'], ['Fire / shield', '<kbd>Space</kbd> / <kbd>↓</kbd>'], ['Ready / scores / chat', '<kbd>R</kbd> / <kbd>S</kbd> / <kbd>Enter</kbd>']],
+    board: 'Most rounds won online',
+  },
+  drakonas: {
+    title: 'Drakonas',
+    facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Shooter', 'Genre']],
+    play: 'Fly, shoot, collect upgrades and take down the boss at the end of each stage.',
+    about: 'A 3D vertical shoot-\'em-up in the spirit of Raptor. Scouts, fighters, UFOs and mines come at you in waves; power up your guns, keep your combo going and survive the boss bullet storms.',
+    keys: [['Fly', '<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, arrows, or drag on phones'], ['Fire', 'Automatic'], ['Bomb', '<kbd>Space</kbd>']],
+    board: 'Highest score in one run',
+  },
+  siege: {
+    title: 'Ghost Siege',
+    facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Strategy', 'Genre']],
+    play: 'Build towers, hold the line, survive as many waves as you can.',
+    about: 'A 3D tower defense. Ghosts and UFOs march down the path toward your base. Build blasters, cannons and rockets beside the road, upgrade them, and call waves early for bonus gold. Every fifth wave brings a boss.',
+    keys: [['Build / upgrade', 'Click or tap a tile or tower'], ['Next wave', 'Button (early = bonus gold)'], ['Speed', '2× toggle']],
+    board: 'Highest score in one game',
+  },
+  coil: {
+    title: 'Coil',
+    facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Arcade', 'Genre']],
+    play: 'Draw loops around the enemies before they reach you.',
+    about: 'Your mouse trails a glowing coil. Wrap it around enemies to destroy them; catch several in one loop for a multiplier. Do not let them touch you. A modern classic by Hakim El Hattab.',
+    keys: [['Move', 'Mouse']],
+    board: 'Highest score in one run',
+  },
+  maze: {
+    title: 'Maze Rush',
+    facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Puzzle', 'Genre']],
+    play: 'Escape as many mazes as you can in 3 minutes.',
+    about: 'Roll a heavy ball through dark brick mazes and find the exit on the right. Every maze you clear makes the next one bigger. Beat the clock and climb the leaderboard.',
+    keys: [['Roll', 'Arrow keys, or drag on phones'], ['Help', 'Hold <kbd>I</kbd>']],
+    board: 'Most mazes cleared in 3 minutes',
+  },
   paint: {
     title: 'Paint Clash',
     facts: [['2–4', 'Players'], ['Online', 'Room codes'], ['Arcade', 'Genre']],

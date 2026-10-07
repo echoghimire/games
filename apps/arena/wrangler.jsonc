@@ -26,13 +26,15 @@
     "bindings": [
       { "name": "ROOMS", "class_name": "Room" },
       { "name": "FIGHTS", "class_name": "FightRoom" },
-      { "name": "PARTIES", "class_name": "PartyRoom" }
+      { "name": "PARTIES", "class_name": "PartyRoom" },
+      { "name": "WPILOT", "class_name": "WPilotRoom" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Room"] },
     { "tag": "v2", "new_sqlite_classes": ["FightRoom"] },
-    { "tag": "v3", "new_sqlite_classes": ["PartyRoom"] }
+    { "tag": "v3", "new_sqlite_classes": ["PartyRoom"] },
+    { "tag": "v4", "new_sqlite_classes": ["WPilotRoom"] }
   ],
   "vars": {
     "LANDING_URL": "https://game.ktmtronix.com",

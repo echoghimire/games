@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <base href="/play/wpilot/">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>WPilot · Tronix Arena</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <!-- WPilot by Johan Dahlberg (MIT licence, see LICENSE). -->
+  <script src="lib/match.js"></script>
+  <script src="lib/particle.js"></script>
+  <script src="devices.js"></script>
+  <script src="gameobjects.js"></script>
+  <script src="wpilot.js"></script>
+  <script src="/play/tronix-hook.js"></script>
+</head>
+<body>
+  <section id="viewport" class="fullscreen"><canvas></canvas></section>
+
+  <div id="lobby" class="overlay">
+    <div class="card">
+      <div class="kicker">ONLINE · UP TO 8 PILOTS</div>
+      <h1>WPilot</h1>
+      <p class="muted">Space dogfights in the style of XPilot. Everyone presses <kbd>R</kbd> when ready, first to 10 kills wins the round, then the map changes.</p>
+
+      <div class="public">
+        <div>
+          <b>Public arena</b>
+          <span id="public-info" class="muted">Checking…</span>
+        </div>
+        <button class="btn primary" id="join-public">Join</button>
+      </div>
+
+      <div class="row">
+        <button class="btn" id="create">Create private room</button>
+      </div>
+      <form class="row" id="join-form">
+        <input id="code" class="code" maxlength="6" placeholder="CODE" autocomplete="off" spellcheck="false">
+        <button class="btn">Join room</button>
+      </form>
+      <p id="notice" class="notice" hidden></p>
+
+      <label class="check"><input type="checkbox" id="sound" checked> Sound</label>
+
+      <div class="keys">
+        <span><kbd>←</kbd><kbd>→</kbd> turn</span>
+        <span><kbd>↑</kbd> thrust</span>
+        <span><kbd>Space</kbd> fire</span>
+        <span><kbd>↓</kbd> shield</span>
+        <span><kbd>R</kbd> ready</span>
+        <span><kbd>S</kbd> scores</span>
+        <span><kbd>Enter</kbd> chat</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="room-chip" hidden></div>
+
+  <div id="touch" hidden>
+    <div class="pad left">
+      <button data-key="37" aria-label="Turn left">⟲</button>
+      <button data-key="39" aria-label="Turn right">⟳</button>
+    </div>
+    <div class="pad right">
+      <button data-key="40" aria-label="Shield">🛡</button>
+      <button data-key="38" aria-label="Thrust">▲</button>
+      <button data-key="32" aria-label="Fire" class="fire">●</button>
+    </div>
+    <button class="ready" data-key="82">Ready</button>
+  </div>
+
+  <script>
+    // Tronix Arena front end for the WPilot client (replaces the original
+    // splash screens). Rooms are Durable Objects behind /api/wpilot/rooms.
+    var wpilot = null;
+    var $ = function (id) { return document.getElementById(id); };
+    var touch = matchMedia('(pointer: coarse)').matches;
+    var currentKeyboard = null;
+
+    Tronix.bar('WPilot');
+
+    function notice(text) {
+      $('notice').textContent = text || '';
+      $('notice').hidden = !text;
+    }
+
+    function refreshPublic() {
+      fetch('/api/wpilot/rooms/PUBLIC')
+        .then(function (r) { return r.json(); })
+        .then(function (info) {
+          $('public-info').textContent = info.players + ' of ' + info.max + ' pilots · ' + info.map;
+        })
+        .catch(function () { $('public-info').textContent = ''; });
+    }
+
+    function showLobby(reason) {
+      $('lobby').hidden = false;
+      $('room-chip').hidden = true;
+      $('touch').hidden = true;
+      notice(reason);
+      refreshPublic();
+    }
+
+    function join(code) {
+      code = String(code || '').toUpperCase();
+      notice('');
+      $('lobby').hidden = true;
+
+      var canvas = document.querySelector('#viewport canvas');
+      var options = Object.assign({}, DEFAULT_OPTIONS);
+      options.sfx_sound_enabled = options.bg_sound_enabled = $('sound').checked;
+
+      var viewport = new ViewportDevice(canvas, canvas.clientWidth, canvas.clientHeight, options),
+          keyboard = new KeyboardDevice(document, options),
+          sound = new SoundDevice(options);
+      currentKeyboard = keyboard;
+
+      function onResize() { viewport.update_size(canvas.clientWidth, canvas.clientHeight); }
+      window.addEventListener('resize', onResize);
+
+      wpilot = new WPilotClient(options);
+      wpilot.set_viewport(viewport);
+      wpilot.set_input(keyboard);
+      wpilot.set_sound(sound);
+
+      wpilot.onconnect = function () {
+        $('room-chip').textContent = code === 'PUBLIC' ? 'Public arena' : 'Room ' + code;
+        $('room-chip').hidden = false;
+        $('touch').hidden = !touch;
+        if (code !== 'PUBLIC') history.replaceState(null, '', '/play/wpilot?room=' + code);
+      };
+
+      wpilot.ondisconnect = function (reason) {
+        window.removeEventListener('resize', onResize);
+        wpilot.set_viewport(null);
+        wpilot.set_input(null);
+        wpilot.set_sound(null);
+        wpilot = null;
+        viewport.destroy();
+        keyboard.destroy();
+        sound.destroy();
+        currentKeyboard = null;
+        showLobby(reason && reason !== 'Unknown reason' ? 'Disconnected: ' + reason : 'Disconnected from the room.');
+      };
+
+      var proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+      wpilot.join(proto + location.host + '/api/wpilot/rooms/' + code + '/ws');
+    }
+
+    $('join-public').onclick = function () { join('PUBLIC'); };
+    $('create').onclick = function () {
+      fetch('/api/wpilot/rooms', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function (b) {
+          if (b.code) join(b.code);
+          else notice(b.error || 'Could not create a room.');
+        })
+        .catch(function () { notice('Could not create a room.'); });
+    };
+    $('join-form').onsubmit = function (e) {
+      e.preventDefault();
+      var code = $('code').value.trim().toUpperCase();
+      if (!/^[A-Z0-9]{6}$/.test(code)) return notice('Room codes have 6 letters and numbers.');
+      join(code);
+    };
+
+    // Touch buttons press the same keys the keyboard would.
+    Array.prototype.forEach.call(document.querySelectorAll('#touch [data-key]'), function (btn) {
+      var key = +btn.dataset.key;
+      function set(down) {
+        if (!currentKeyboard) return;
+        var states = currentKeyboard.key_states;
+        if (down && states[key] === 0) states[key] = 1;
+        if (!down) states[key] = 0;
+        btn.classList.toggle('on', down);
+      }
+      btn.addEventListener('pointerdown', function (e) { e.preventDefault(); set(true); });
+      btn.addEventListener('pointerup', function () { set(false); });
+      btn.addEventListener('pointercancel', function () { set(false); });
+      btn.addEventListener('pointerleave', function () { set(false); });
+    });
+
+    var params = new URLSearchParams(location.search);
+    if (params.get('room')) {
+      $('code').value = params.get('room').toUpperCase();
+      showLobby('Invited to room ' + $('code').value + ' — press Join room.');
+    } else {
+      showLobby('');
+    }
+    setInterval(function () { if (!$('lobby').hidden) refreshPublic(); }, 5000);
+  </script>
+</body>
+</html>

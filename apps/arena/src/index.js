@@ -8,6 +8,7 @@ import { MAX_PLAYERS, ROOM_CODE_RE, newRoomCode } from './room.js'
 export { Room } from './room.js'
 export { FightRoom } from './fightroom.js'
 export { PartyRoom } from './partyroom.js'
+export { WPilotRoom } from './wpilotroom.js'
 
 // WADs are uploaded to R2 under this version prefix (see scripts/upload-wads.sh)
 // so the browser can cache them forever.
@@ -17,7 +18,11 @@ const MODES = new Set(['deathmatch', 'altdeath', 'coop'])
 // Mini-games with online rooms, and their player limits.
 const PARTY_GAMES = { paint: 4, pong: 2 }
 // Mini-games with leaderboards, and the highest score we accept (sanity cap).
-const SCORE_GAMES = { smash: 100000, flyer: 10000, pong: 1000, paint: 784 }
+const SCORE_GAMES = { smash: 100000, flyer: 10000, pong: 1000, paint: 784, coil: 10000000, maze: 200, siege: 10000000, drakonas: 10000000 }
+// Leaderboards the game server keeps itself (WPilot round wins): read-only here.
+const SERVER_SCORED = new Set(['wpilot'])
+// WPilot: one always-open public arena plus private rooms by code.
+const WPILOT_PUBLIC = 'PUBLIC'
 
 export default {
   async fetch(request, env) {
@@ -138,7 +143,8 @@ async function api(request, env, url, user) {
   if (sc) {
     const game = sc[1]
     const cap = SCORE_GAMES[game]
-    if (!cap) return json({ error: 'Unknown game' }, 404)
+    if (!cap && !SERVER_SCORED.has(game)) return json({ error: 'Unknown game' }, 404)
+    if (request.method === 'POST' && !cap) return json({ error: 'Scores for this game come from the game server' }, 403)
     if (request.method === 'POST') {
       let body = {}
       try {
@@ -156,6 +162,21 @@ async function api(request, env, url, user) {
         .run()
     }
     if (request.method === 'POST' || request.method === 'GET') return json(await leaderboard(env, game, user))
+  }
+
+  // WPilot rooms run the game server in a Durable Object (wpilotroom.js).
+  // Private rooms need no setup: any well-formed code is a room.
+  if (request.method === 'POST' && url.pathname === '/api/wpilot/rooms') {
+    return json({ code: newRoomCode() }, 201)
+  }
+  const wp = url.pathname.match(/^\/api\/wpilot\/rooms\/([^/]+)(\/ws)?$/)
+  if (wp) {
+    const code = wp[1].toUpperCase()
+    if (code !== WPILOT_PUBLIC && !ROOM_CODE_RE.test(code)) return json({ error: 'Room not found' }, 404)
+    const stub = roomStub(env, code, env.WPILOT)
+    const headers = { 'x-user-id': user.id, 'x-user-name': user.display_name }
+    if (wp[2] === '/ws') return upgradeToRoom(request, env, stub, headers)
+    if (request.method === 'GET') return stub.fetch('https://room/info', { headers })
   }
 
   // Iron Arena (fighter) online rooms: two players, see fightroom.js.
