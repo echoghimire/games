@@ -53,10 +53,11 @@ async function boot() {
   $('home-name').textContent = state.me.name
   $('account-link').href = state.me.landingUrl
 
+  // Back buttons return to the game's page (data-back="deathmatch") or the library.
   for (const b of document.querySelectorAll('[data-back]')) {
     b.onclick = () => {
-      history.replaceState(null, '', '/')
-      show('screen-home')
+      history.replaceState(null, '', b.dataset.back ? `/#${b.dataset.back}` : '/')
+      route()
     }
   }
   $('go-host').onclick = () => show('screen-host')
@@ -66,14 +67,44 @@ async function boot() {
     const code = $('join-code').value.trim().toUpperCase()
     if (code) openJoin(code)
   }
+  $('fight-join-form').onsubmit = e => {
+    e.preventDefault()
+    const code = $('fight-join-code').value.trim().toUpperCase()
+    if (code) location.href = `/f/${encodeURIComponent(code)}`
+  }
   $('host-form').onsubmit = e => {
     e.preventDefault()
     hostRoom(Object.fromEntries(new FormData(e.target)))
   }
+  setupFilters()
+  window.addEventListener('hashchange', route)
 
   const m = location.pathname.match(/^\/r\/([A-Za-z0-9]+)$/)
   if (m) openJoin(m[1].toUpperCase())
-  else show('screen-home')
+  else route()
+}
+
+// The library and game pages are addressed by hash: /, /#deathmatch, /#fighter.
+const GAME_PAGES = { deathmatch: 'screen-game-deathmatch', fighter: 'screen-game-fighter' }
+
+function route() {
+  if (state.role) return // a game is running; ignore navigation
+  const page = GAME_PAGES[location.hash.slice(1)]
+  show(page || 'screen-home')
+  window.scrollTo(0, 0)
+}
+
+function setupFilters() {
+  const chips = [...document.querySelectorAll('#chips .chip')]
+  for (const chip of chips) {
+    chip.onclick = () => {
+      for (const c of chips) c.classList.toggle('is-on', c === chip)
+      const f = chip.dataset.filter
+      for (const tile of document.querySelectorAll('#store-grid .tile')) {
+        tile.hidden = f !== 'all' && !tile.dataset.tags.split(' ').includes(f)
+      }
+    }
+  }
 }
 
 // ---------- host / join / solo ----------

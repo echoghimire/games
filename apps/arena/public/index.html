@@ -19,12 +19,73 @@
     </header>
 
     <main id="screens">
-      <!-- Home -->
+      <!-- Home: game library -->
       <section class="screen" id="screen-home" hidden>
-        <h1>Ready up, <span id="home-name"></span>.</h1>
-        <h2 class="section-title">Deathmatch · up to 4 players</h2>
+        <p class="eyebrow">Hi, <span id="home-name"></span></p>
+        <h1>Games</h1>
+        <div class="chips" id="chips">
+          <button class="chip is-on" data-filter="all">All</button>
+          <button class="chip" data-filter="online">Online multiplayer</button>
+          <button class="chip" data-filter="shooter">Shooter</button>
+          <button class="chip" data-filter="fighting">Fighting</button>
+        </div>
+        <div class="store-grid" id="store-grid">
+          <a class="tile" href="#deathmatch" data-tags="online shooter">
+            <div class="tile-cover">
+              <img src="/covers/deathmatch.jpg" alt="Arena Deathmatch gameplay" loading="lazy" />
+              <span class="tile-badge">1–4 players online</span>
+            </div>
+            <div class="tile-meta">
+              <img class="app-icon" src="/covers/deathmatch-icon.jpg" alt="" />
+              <div>
+                <strong>Arena Deathmatch</strong>
+                <span>Shooter · Freedoom</span>
+              </div>
+            </div>
+          </a>
+          <a class="tile" href="#fighter" data-tags="online fighting">
+            <div class="tile-cover">
+              <img src="/covers/fighter.jpg" alt="Iron Arena gameplay" loading="lazy" />
+              <span class="tile-badge">1v1 online</span>
+            </div>
+            <div class="tile-meta">
+              <img class="app-icon" src="/covers/fighter-icon.jpg" alt="" />
+              <div>
+                <strong>Iron Arena</strong>
+                <span>Fighting · Andrea Acanfora</span>
+              </div>
+            </div>
+          </a>
+          <div class="tile tile--soon" data-tags="online shooter fighting">
+            <div class="tile-cover"><span>More games<br />coming soon</span></div>
+            <div class="tile-meta">
+              <div class="app-icon app-icon--blank">+</div>
+              <div>
+                <strong>Next up</strong>
+                <span>New games land here first</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Game page: Arena Deathmatch -->
+      <section class="screen detail" id="screen-game-deathmatch" hidden>
+        <a class="back-link" href="#">← All games</a>
+        <div class="detail-hero">
+          <img class="app-icon app-icon--lg" src="/covers/deathmatch-icon.jpg" alt="" />
+          <div>
+            <h1>Arena Deathmatch</h1>
+            <p class="dev">Freedoom · Chocolate Doom engine</p>
+            <ul class="facts">
+              <li><strong>1–4</strong><span>Players</span></li>
+              <li><strong>Online</strong><span>Room codes</span></li>
+              <li><strong>Shooter</strong><span>Genre</span></li>
+            </ul>
+          </div>
+        </div>
         <div class="cards">
-          <button class="card" id="go-host">
+          <button class="card card--primary" id="go-host">
             <strong>Host a match</strong>
             <span>Deathmatch or co-op for up to 4 players. Share a 6-letter code.</span>
           </button>
@@ -40,15 +101,65 @@
             <span>The full Freedoom campaign against monsters. Good for warming up.</span>
           </button>
         </div>
-
-        <h2 class="section-title">Iron Arena · 3D fighter</h2>
-        <div class="cards">
-          <a class="card card--feature" href="/fighter">
-            <strong>Iron Arena</strong>
-            <span>One-on-one 3D brawler. Fight a friend online with a room code, or locally on one keyboard.</span>
-            <span class="tag">by Andrea Acanfora</span>
-          </a>
+        <div class="shots">
+          <img src="/covers/deathmatch.jpg" alt="FreeDM arena" loading="lazy" />
+          <img src="/covers/deathmatch-2.jpg" alt="Freedoom level" loading="lazy" />
         </div>
+        <h2 class="section-title">About this game</h2>
+        <p class="about">Fast, old-school deathmatch for up to four friends. Pick a map pack, share the room code, and it's on. Deathmatch 2.0 respawns items; co-op takes on the Freedoom campaign together.</p>
+        <h2 class="section-title">Controls</h2>
+        <ul class="keys">
+          <li><span>Move / strafe</span><span><kbd>W</kbd><kbd>S</kbd> <kbd>A</kbd><kbd>D</kbd></span></li>
+          <li><span>Turn</span><span>Mouse (click the game to capture) or <kbd>O</kbd><kbd>P</kbd></span></li>
+          <li><span>Fire / respawn</span><span>Left click or <kbd>Space</kbd></span></li>
+          <li><span>Use / open doors</span><span><kbd>E</kbd></span></li>
+          <li><span>Run</span><span><kbd>Shift</kbd></span></li>
+          <li><span>Map · chat · menu</span><span><kbd>Tab</kbd> <kbd>T</kbd> <kbd>Esc</kbd></span></li>
+        </ul>
+      </section>
+
+      <!-- Game page: Iron Arena -->
+      <section class="screen detail" id="screen-game-fighter" hidden>
+        <a class="back-link" href="#">← All games</a>
+        <div class="detail-hero">
+          <img class="app-icon app-icon--lg" src="/covers/fighter-icon.jpg" alt="" />
+          <div>
+            <h1>Iron Arena</h1>
+            <p class="dev">Andrea Acanfora</p>
+            <ul class="facts">
+              <li><strong>1v1</strong><span>Players</span></li>
+              <li><strong>Online</strong><span>Room codes</span></li>
+              <li><strong>Fighting</strong><span>Genre</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="cards">
+          <a class="card card--primary" href="/fighter">
+            <strong>Play</strong>
+            <span>Host an online match, or fight locally on one keyboard.</span>
+          </a>
+          <form class="card" id="fight-join-form">
+            <strong>Join with a code</strong>
+            <div class="row">
+              <input id="fight-join-code" maxlength="6" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              <button class="btn">Join</button>
+            </div>
+          </form>
+        </div>
+        <div class="shots">
+          <img src="/covers/fighter.jpg" alt="Iron Arena fight" loading="lazy" />
+          <img src="/covers/fighter-2.jpg" alt="Iron Arena title screen" loading="lazy" />
+        </div>
+        <h2 class="section-title">About this game</h2>
+        <p class="about">A 3D arcade brawler with frame-data combat, combos, grabs and rounds. Pick Brakk or Vesna, send your friend a room code, and settle it one-on-one. Keyboard only for now.</p>
+        <h2 class="section-title">Controls (online: either set works)</h2>
+        <ul class="keys">
+          <li><span>Move / jump / crouch</span><span><kbd>A</kbd><kbd>D</kbd> <kbd>W</kbd><kbd>S</kbd> or arrows</span></li>
+          <li><span>Light · Heavy · Kick</span><span><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd> or <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span></li>
+          <li><span>Block · Grab</span><span><kbd>I</kbd><kbd>U</kbd> or <kbd>5</kbd><kbd>4</kbd></span></li>
+          <li><span>Dash</span><span>Double-tap forward or back</span></li>
+          <li><span>Leave match</span><span><kbd>Esc</kbd></span></li>
+        </ul>
       </section>
 
       <!-- Host setup -->
@@ -79,7 +190,7 @@
           <label>Time limit (minutes, 0 = none) <input name="timelimit" type="number" min="0" max="60" value="10" /></label>
           <label class="check"><input name="monsters" type="checkbox" /> Monsters</label>
           <div class="actions">
-            <button type="button" class="btn ghost" data-back>Back</button>
+            <button type="button" class="btn ghost" data-back="deathmatch">Back</button>
             <button class="btn" id="host-submit">Create room</button>
           </div>
         </form>
@@ -90,7 +201,7 @@
         <h1>Join room <span class="code" id="join-title"></span></h1>
         <div class="panel" id="join-info"></div>
         <div class="actions">
-          <button type="button" class="btn ghost" data-back>Back</button>
+          <button type="button" class="btn ghost" data-back="deathmatch">Back</button>
           <button class="btn" id="join-go" disabled>Join match</button>
         </div>
       </section>
