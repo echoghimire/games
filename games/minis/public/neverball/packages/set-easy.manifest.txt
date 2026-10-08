@@ -1,0 +1,7 @@
+package set-easy
+filename set-easy-951b1c615e3134c1343fad9d5f99bee2.zip
+size 3887432
+files set-easy.txt map-easy/easy.sol map-easy/peasy.sol map-easy/coins.sol map-easy/fence.sol map-easy/groundbreak.sol map-easy/goals.sol map-easy/goslow.sol map-easy/slightcurve.sol map-easy/slalom.sol map-easy/lollipop.sol map-easy/bumper.sol map-easy/hole.sol map-easy/speedbumps.sol map-easy/roundlaby.sol map-easy/thwomp2.sol map-easy/easyhalfpipe.sol map-easy/roundcoins.sol map-easy/corners.sol map-easy/greed.sol map-easy/wakka.sol map-easy/maze.sol map-easy/curved.sol map-easy/mover.sol map-easy/bumps.sol map-easy/mazebump.sol
+name Neverball Easy
+desc Difficulty: Beginner through Intermediate\n\n25 levels with a smooth learning curve.\nRead level introductions for gameplay tips.\n \n 
+shot set-easy-3509960213be9c2b02d985fe20e805a0.jpg

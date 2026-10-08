@@ -1,0 +1,134 @@
+package ball-atom
+filename ball-atom-cdc6865802a75741e27a7a051e25cf6a.zip
+size 106740
+name Atom
+shot ball-atom-3839e666a4ba7cd4900dd12ea996a7fc.png
+package ball-blinky
+filename ball-blinky-7e78ce6824ec4e00f256d9fd70759cd6.zip
+size 65859
+name Blinky
+shot ball-blinky-635c04c61cf9bf8d5da00a27375f29d9.png
+package ball-catseye
+filename ball-catseye-ca715da56186ec1a07f0055331d65060.zip
+size 203309
+name Cat's Eye
+shot ball-catseye-1432b66e1f5113d7fffe9039d77840e7.png
+package ball-cheese-ball
+filename ball-cheese-ball-dddae41cf5265b32bf8fc5ccf54cb141.zip
+size 339015
+name Cheese Ball
+shot ball-cheese-ball-1f773c33af227ffbbdfae259cc987d60.png
+package ball-diagonal-ball
+filename ball-diagonal-ball-8887d7d86a2b27bb4c9a69ba057072bf.zip
+size 106586
+name Diagonal Ball
+shot ball-diagonal-ball-9ea84a8ab1853091628273528025465b.png
+package ball-earth
+filename ball-earth-d69bbfd337470f80ed1ec0a127c6b8c4.zip
+size 582583
+name Earth
+shot ball-earth-d6270c4e3fe33d8cd2930378304dea55.png
+package ball-eyeball
+filename ball-eyeball-b3749465d12815538f655ed637c841c8.zip
+size 319308
+name Eyeball
+shot ball-eyeball-555a87887a803b7b4f92e2a13e24892b.png
+package ball-lava
+filename ball-lava-c17be51ae30f9572862aa2f12d319a73.zip
+size 470822
+name Lava
+shot ball-lava-29b695b64e2800e18c2ba0a2853bc670.png
+package ball-magic-eightball
+filename ball-magic-eightball-5a2cf977b4b3a3fb05f450aafa079fca.zip
+size 105549
+name Magic Eightball
+shot ball-magic-eightball-b4b083db6ddbbb36586ec8da5f623e5f.png
+package ball-melon
+filename ball-melon-ab735bc6012c17dfea27188496fdc956.zip
+size 268705
+name Melon
+shot ball-melon-331ac67d23e65c21a1bfb06f9bc606f6.png
+package ball-orange
+filename ball-orange-3fd97901aaaeb8e542173fec5a7ca511.zip
+size 516592
+name Orange
+shot ball-orange-f94c47e0c022810cfebd5b327aeb9a3f.png
+package ball-reactor
+filename ball-reactor-76fdbb0a941b92a530b35aabdbfb8aa9.zip
+size 203948
+name Reactor
+shot ball-reactor-0ab53fda109dbc89de2c6f3cd89ddbe0.png
+package ball-rift
+filename ball-rift-a889d5dfc6db0effd13622473fcadde2.zip
+size 235575
+name Rift
+shot ball-rift-5eea9684780193587f1dd5459daf3211.png
+package ball-saturn
+filename ball-saturn-68cd1b6bc5768abfc8612857cb110eb0.zip
+size 138398
+name Saturn
+shot ball-saturn-7ec905fe72e448d19a512fa5d02b18d1.png
+package ball-snowglobe
+filename ball-snowglobe-8a25f6b3489d8b7297f72fb6b86bb9fa.zip
+size 197484
+name Snowglobe
+shot ball-snowglobe-894e4c61167ced16a145e78388ec3040.png
+package ball-sootsprite
+filename ball-sootsprite-fbf788839b7f0f11cfc8d0108c225af6.zip
+size 104149
+name Sootsprite
+shot ball-sootsprite-2e3a582af6735e04c889abcaa7383769.png
+package ball-ufo
+filename ball-ufo-47cf6aa77c8fbb96f6236b83c7b6732a.zip
+size 257105
+name UFO
+shot ball-ufo-54d8688ca310384eb31485658edecd6e.png
+package set-easy
+filename set-easy-951b1c615e3134c1343fad9d5f99bee2.zip
+size 3887432
+files set-easy.txt map-easy/easy.sol map-easy/peasy.sol map-easy/coins.sol map-easy/fence.sol map-easy/groundbreak.sol map-easy/goals.sol map-easy/goslow.sol map-easy/slightcurve.sol map-easy/slalom.sol map-easy/lollipop.sol map-easy/bumper.sol map-easy/hole.sol map-easy/speedbumps.sol map-easy/roundlaby.sol map-easy/thwomp2.sol map-easy/easyhalfpipe.sol map-easy/roundcoins.sol map-easy/corners.sol map-easy/greed.sol map-easy/wakka.sol map-easy/maze.sol map-easy/curved.sol map-easy/mover.sol map-easy/bumps.sol map-easy/mazebump.sol
+name Neverball Easy
+desc Difficulty: Beginner through Intermediate\n\n25 levels with a smooth learning curve.\nRead level introductions for gameplay tips.\n \n 
+shot set-easy-3509960213be9c2b02d985fe20e805a0.jpg
+package set-fwp
+filename set-fwp-28548c85cb26dc891e829c4736d3908e.zip
+size 12289098
+files set-fwp.txt map-fwp/atrium.sol map-fwp/swarm.sol map-fwp/tennis.sol map-fwp/slope.sol map-fwp/oddities.sol map-fwp/tree.sol map-fwp/spacetime.sol map-fwp/museum.sol map-fwp/mountains.sol map-fwp/confetti.sol map-fwp/cargo.sol map-fwp/ramps.sol map-fwp/rails.sol map-fwp/discs.sol map-fwp/ufo.sol map-fwp/adventure.sol map-fwp/rings.sol map-fwp/ladybirds.sol map-fwp/buoys.sol map-fwp/inferno.sol
+name Nevermania
+desc Difficulty: Expert through Impossible\n\nAssorted levels for advanced players.\nAuthor: Florian Priester\n\n 
+shot set-fwp-79dd3b6b942c2ef3eb15140247eedf20.png
+package set-hard
+filename set-hard-e269c3a4cfe6a14eba3312afe358aeda.zip
+size 2861403
+files set-hard.txt map-hard/grid.sol map-hard/risers.sol map-hard/curbs.sol map-hard/hump.sol map-hard/pyramid.sol map-hard/rampup.sol map-hard/check.sol map-hard/tilt.sol map-hard/sync.sol map-hard/nostairs.sol map-hard/frogger.sol map-hard/quads.sol map-hard/teleport.sol map-hard/gaps.sol map-hard/hallways.sol map-hard/spiralin.sol map-hard/spread.sol map-hard/invis.sol map-hard/ring.sol map-hard/flip.sol map-hard/movers.sol map-hard/pipe.sol map-hard/paths.sol map-hard/poker.sol map-hard/airways.sol
+name Neverball Hard
+desc Difficulty: Intermediate through Expert\n\n25 levels with more of a challenge for\nthe experienced player. Try to claim\nBest Times, Most Coins, and Fast Unlock records.\n 
+shot set-hard-485b493400c3dbdd932e337e8cd67689.jpg
+package set-medium
+filename set-medium-218ad2e2d1090ad4a4520cb920a97332.zip
+size 4404223
+files set-medium.txt map-medium/locks.sol map-medium/multicurves.sol map-medium/accordian.sol map-medium/zigzag.sol map-medium/roundfloors.sol map-medium/four.sol map-medium/hardrise.sol map-medium/easytele.sol map-medium/cross.sol map-medium/sparselines.sol map-medium/qbert.sol map-medium/stairs.sol map-medium/drops.sol map-medium/telemaze.sol map-medium/learngrow.sol map-medium/spiraldn.sol map-medium/timer.sol map-medium/spiralup.sol map-medium/angle.sol map-medium/coneskeleton.sol map-medium/rampdn.sol map-medium/islands.sol map-medium/plinko.sol map-medium/title.sol map-medium/woodmaze.sol
+name Neverball Medium
+desc Difficulty: Beginner through Expert\n\n25 levels which provide a balanced\nchallenge for players. Try to claim\nsome of the records provided.\n 
+shot set-medium-64366be273abb98f92969b4df982ef8b.jpg
+package set-mym
+filename set-mym-7a9fd02ca8e2b8ce9253ad12bab06754.zip
+size 5897663
+files set-mym.txt map-mym/descent.sol map-mym/dance1.sol map-mym/drive1.sol map-mym/scrambling.sol map-mym/earthquake.sol map-mym/glasstower.sol map-mym/trust.sol map-mym/loop1.sol map-mym/maze1.sol map-mym/snow.sol map-mym/circuit1.sol map-mym/comeback.sol map-mym/maze2.sol map-mym/circuit2.sol map-mym/ghosts.sol map-mym/turn.sol map-mym/assault.sol map-mym/narrow.sol map-mym/loop2.sol map-mym/up.sol map-mym/drive2.sol map-mym/running.sol map-mym/climb.sol map-mym/hard.sol map-mym/dance2.sol
+name Tour de force
+desc Difficulty: Expert through Insane\n\n25 levels with even greater challenge.\nAuthor: Mehdi Yousfi-Monod (mym)\n \n 
+shot set-mym-195b80e1797a84d61436266b7c360397.jpg
+package set-mym2
+filename set-mym2-be65b2879aa1868d95b1c66908cbfc46.zip
+size 7406022
+files set-mym2.txt map-mym2/sonic.sol map-mym2/movinglumps.sol map-mym2/backforth.sol map-mym2/webs.sol map-mym2/speeddance.sol map-mym2/translation.sol map-mym2/movingpath.sol map-mym2/bigball.sol map-mym2/bounces.sol map-mym2/rainbow.sol map-mym2/bombman.sol map-mym2/runstop.sol map-mym2/fall.sol map-mym2/updown.sol map-mym2/basket.sol map-mym2/longpipe.sol map-mym2/bigcone.sol map-mym2/rodeo.sol map-mym2/littlecones.sol map-mym2/shaker.sol map-mym2/push.sol map-mym2/grinder.sol map-mym2/speed.sol map-mym2/morenarrow.sol map-mym2/freefall.sol
+name Retour de force
+desc Difficulty: A little bit harder than my first set.\n\nMore challenge, particularly for grabbing coins.\nAuthor: Mehdi Yousfi-Monod (mym)\n \n 
+shot set-mym2-1077b3426f6d966c517e03d683cbcf61.jpg
+package set-tones
+filename set-tones-b42d4f59f2cffbdfcc522ad1ad6f2714.zip
+size 4932447
+files set-tones.txt map-tones/hurdles.sol map-tones/easyian.sol map-tones/canals.sol map-tones/marble.sol map-tones/check.sol map-tones/easyone.sol map-tones/swoop.sol map-tones/waves.sol map-tones/discs.sol map-tones/bigtube.sol map-tones/blue.sol map-tones/swish.sol map-tones/leaps.sol map-tones/bumperoo.sol map-tones/skiball.sol map-tones/city.sol map-tones/tonesmaze.sol map-tones/hotwheels.sol map-tones/twisted.sol map-tones/runner.sol
+name Tones Levels
+desc Difficulty: Moderate to Difficult.\n\nAuthor: Ian Walker\n\n 
+shot set-tones-0eabdd86c562b368c6455a826439b4cf.jpg

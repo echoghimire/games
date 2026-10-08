@@ -90,6 +90,7 @@ const GAME_PAGES = { deathmatch: 'screen-game-deathmatch', fighter: 'screen-game
 // Arcade mini-games (games/minis), served at /play/<id>/.
 const MINI_GAMES = {
   wpilot: {
+    by: 'Based on WPilot by Johan Dahlberg (MIT)',
     title: 'WPilot',
     facts: [['2–8', 'Players'], ['Online', 'Public + private rooms'], ['Shooter', 'Genre']],
     play: 'Jump into the public arena, or create a private room and share the code.',
@@ -99,6 +100,7 @@ const MINI_GAMES = {
     board: 'Most rounds won online',
   },
   drakonas: {
+    by: 'Tronix Arena · models by Casmo (MIT)',
     title: 'Drakonas',
     facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Shooter', 'Genre']],
     play: 'Fly, shoot, collect upgrades and take down the boss at the end of each stage.',
@@ -107,6 +109,7 @@ const MINI_GAMES = {
     board: 'Highest score in one run',
   },
   siege: {
+    by: 'Tronix Arena · models by Casmo (MIT)',
     title: 'Ghost Siege',
     facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Strategy', 'Genre']],
     play: 'Build towers, hold the line, survive as many waves as you can.',
@@ -115,6 +118,7 @@ const MINI_GAMES = {
     board: 'Highest score in one game',
   },
   coil: {
+    by: 'By Hakim El Hattab (MIT)',
     title: 'Coil',
     facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Arcade', 'Genre']],
     play: 'Draw loops around the enemies before they reach you.',
@@ -122,7 +126,17 @@ const MINI_GAMES = {
     keys: [['Move', 'Mouse']],
     board: 'Highest score in one run',
   },
+  neverball: {
+    by: 'By the Neverball team (GPL)',
+    title: 'Neverball',
+    facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Puzzle', 'Genre']],
+    play: 'Pick Challenge mode for the leaderboard: play a whole level set on a few lives.',
+    about: 'Tilt the floor to roll the ball. Collect coins to unlock the goal and reach it before time runs out. Seven level sets, from gentle slopes to fiendish moving platforms. In Challenge mode every coin counts, and every 100 coins earns an extra ball. The classic open-source game by the Neverball team (GPL).',
+    keys: [['Tilt', 'Mouse or arrow keys · swipe on phones'], ['Camera', 'Left / right click · other thumb on phones'], ['Menu', '<kbd>Esc</kbd>']],
+    board: 'Most coins in one Challenge run',
+  },
   maze: {
+    by: 'Based on Astray by Rye Terrell',
     title: 'Maze Rush',
     facts: [['1', 'Player'], ['Global', 'Leaderboard'], ['Puzzle', 'Genre']],
     play: 'Escape as many mazes as you can in 3 minutes.',
@@ -180,6 +194,7 @@ function route() {
 function showMini(id) {
   const g = MINI_GAMES[id]
   $('mini-icon').src = `/covers/${id}-icon.jpg`
+  $('mini-dev').textContent = g.by || 'Tronix Arena Originals'
   $('mini-title').textContent = g.title
   $('mini-facts').innerHTML = g.facts.map(([a, b]) => `<li><strong>${a}</strong><span>${b}</span></li>`).join('')
   $('mini-play').href = `/play/${id}/`

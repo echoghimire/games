@@ -1,0 +1,5 @@
+package ball-magic-eightball
+filename ball-magic-eightball-5a2cf977b4b3a3fb05f450aafa079fca.zip
+size 105549
+name Magic Eightball
+shot ball-magic-eightball-b4b083db6ddbbb36586ec8da5f623e5f.png

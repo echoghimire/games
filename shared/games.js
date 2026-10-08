@@ -11,6 +11,7 @@ export const GAMES = [
   { id: 'maze', title: 'Maze Rush', unit: 'mazes', cap: 200 },
   { id: 'siege', title: 'Ghost Siege', unit: 'points', cap: 10000000 },
   { id: 'drakonas', title: 'Drakonas', unit: 'points', cap: 10000000 },
+  { id: 'neverball', title: 'Neverball', unit: 'coins', cap: 5000 },
   { id: 'wpilot', title: 'WPilot', unit: 'round wins', server: true },
 ]
 

@@ -1,0 +1,127 @@
+diff --git a/ball/progress.c b/ball/progress.c
+index b4d09e7..763337c 100644
+--- a/ball/progress.c
++++ b/ball/progress.c
+@@ -27,6 +27,10 @@
+ 
+ #include <assert.h>
+ 
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++#endif
++
+ /*---------------------------------------------------------------------------*/
+ 
+ struct progress
+@@ -238,6 +242,18 @@ void progress_stat(int s)
+     if (dirty && mode != MODE_STANDALONE)
+         set_store_hs();
+ 
++#ifdef __EMSCRIPTEN__
++    /* Tronix Arena: report a finished Challenge run (set completed or out of balls). */
++    if (mode == MODE_CHALLENGE &&
++        ((status == GAME_GOAL && done) ||
++         ((status == GAME_FALL || status == GAME_TIME) && curr.balls < 0)))
++    {
++        EM_ASM({
++            if (window.tronixRunOver) window.tronixRunOver($0, $1);
++        }, curr.score, done);
++    }
++#endif
++
+     demo_play_stat(status, coins, timer);
+ }
+ 
+diff --git a/js/index.html b/js/index.html
+index 022dd47..b06df8f 100644
+--- a/js/index.html
++++ b/js/index.html
+@@ -21,13 +21,13 @@ General Public License for more details.
+ 
+   <link rel="icon" href="favicon.svg">
+   <link rel="manifest" href="neverball.webmanifest">
+-  <link rel="preload" href="https://play.neverball.org/packages/available-packages.txt" as="fetch" crossorigin>
++  <link rel="preload" href="packages/available-packages.txt" as="fetch" crossorigin>
+ 
+   <title>Neverball</title>
+ 
+   <meta name="description" content="Play Neverball in the browser. Tilt the floor to roll a ball through an obstacle course before time runs out.">
+ 
+-  <meta property="og:image" content="https://play.neverball.org/screenshot2.png">
++  
+   <meta property="og:image:width" content="1200">
+   <meta property="og:image:height" content="630">
+ 
+@@ -602,6 +602,15 @@ General Public License for more details.
+       }
+     }
+   </style>
++
++  <style>
++    /* Tronix Arena skin */
++    :root { background: radial-gradient(1200px 700px at 80% -20%, #3a1606 0%, transparent 60%), #0b0b0f !important; }
++    body { font-family: Inter, system-ui, sans-serif; }
++    .neverball-box { background-color: #15151c; border: 1px solid #2a2a35; }
++    .neverball-button { background: linear-gradient(135deg, #ff5a1f, #ffb020); color: #160800; }
++    #replay-list-box, #addon-list-box { display: none !important; }
++  </style>
+ </head>
+ 
+ <body>
+@@ -761,7 +770,7 @@ General Public License for more details.
+   <script>
+     'use strict';
+ 
+-    const PACKAGE_BASE_URL = 'https://play.neverball.org/packages/';
++    const PACKAGE_BASE_URL = 'packages/';
+ 
+     var Neverball = {
+       EVENT_BACK: -1,
+@@ -1525,7 +1534,7 @@ General Public License for more details.
+         this.audioSoundSink.connect(this.audioContext.destination);
+         this.audioMusicSink.connect(this.audioContext.destination);
+ 
+-        this.audioCanPlayOgg = (new Audio()).canPlayType('audio/ogg') !== '';
++        this.audioCanPlayOgg = false; // Tronix Arena ships MP3 music only
+       },
+ 
+       audioVolume: function (soundVolume, musicVolume) {
+@@ -1954,7 +1963,7 @@ General Public License for more details.
+ 
+         this.setStatusText('Preparing runtime...');
+ 
+-        if ('serviceWorker' in navigator) {
++        if (false) { // Tronix Arena: no service worker
+           const registration = await navigator.serviceWorker.register('./service-worker.js', {
+             updateViaCache: 'none',
+           });
+@@ -2054,6 +2063,16 @@ General Public License for more details.
+       <button id="dismiss-button" class="neverball-button update-button-secondary">Not Now</button>
+     </div>
+   </div>
++
++  <script src="../tronix-hook.js"></script>
++  <script>
++    Tronix.bar('Neverball', { bottom: true });
++    // Called by the game (ball/progress.c) when a Challenge run ends.
++    window.tronixRunOver = function (coins, completed) {
++      try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
++      Tronix.submit('neverball', coins, { unit: completed ? 'coins · set complete' : 'coins' });
++    };
++  </script>
+ </body>
+ 
+ </html>
+diff --git a/share/package.c b/share/package.c
+index 48902b9..6d4588d 100644
+--- a/share/package.c
++++ b/share/package.c
+@@ -55,7 +55,7 @@ static Array available_packages;
+  */
+ 
+ #ifndef PACKAGE_BASE_URL
+-#define PACKAGE_BASE_URL "https://play.neverball.org/packages/"
++#define PACKAGE_BASE_URL "packages/"
+ #endif
+ 
+ static const char *get_package_url(const char *filename)

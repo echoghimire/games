@@ -19,6 +19,7 @@ Adopted open-source games live in `public/` as plain files (Vite copies them as-
 | Coil | `public/coil/` | hakimel/coil (MIT), trackers removed | score |
 | Maze Rush | `public/maze/` | wwwtyro/Astray (public domain) + 3-minute timer, touch | mazes cleared |
 | WPilot | `public/wpilot/` | jfd/wpilot client (MIT), new lobby, touch buttons | round wins (server-side) |
+| Neverball | `public/neverball/` | Neverball/neverball (GPL-2.0+), Emscripten build, see `SOURCE.md` | coins in one Challenge run |
 
 `public/tronix-hook.js` gives these plain pages the Arena bar (`Tronix.bar`) and the
 leaderboard card (`Tronix.submit`). WPilot's game server is a port of `wpilots.js` in

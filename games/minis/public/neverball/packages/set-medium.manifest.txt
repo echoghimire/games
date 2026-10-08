@@ -1,0 +1,7 @@
+package set-medium
+filename set-medium-218ad2e2d1090ad4a4520cb920a97332.zip
+size 4404223
+files set-medium.txt map-medium/locks.sol map-medium/multicurves.sol map-medium/accordian.sol map-medium/zigzag.sol map-medium/roundfloors.sol map-medium/four.sol map-medium/hardrise.sol map-medium/easytele.sol map-medium/cross.sol map-medium/sparselines.sol map-medium/qbert.sol map-medium/stairs.sol map-medium/drops.sol map-medium/telemaze.sol map-medium/learngrow.sol map-medium/spiraldn.sol map-medium/timer.sol map-medium/spiralup.sol map-medium/angle.sol map-medium/coneskeleton.sol map-medium/rampdn.sol map-medium/islands.sol map-medium/plinko.sol map-medium/title.sol map-medium/woodmaze.sol
+name Neverball Medium
+desc Difficulty: Beginner through Expert\n\n25 levels which provide a balanced\nchallenge for players. Try to claim\nsome of the records provided.\n 
+shot set-medium-64366be273abb98f92969b4df982ef8b.jpg
